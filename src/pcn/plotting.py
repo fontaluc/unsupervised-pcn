@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import *
 import matplotlib.pyplot as plt
@@ -50,6 +51,11 @@ def visualize_latent(ax, z, y):
         print(e)
 
 def log_reconstruction(x, model, epoch, tmp_img="tmp_reconstruction.png", color=False):
+
+    logger = logging.getLogger()
+    old_level = logger.level
+    logger.setLevel(100) # disable imshow logging (Clipping input data to the valid range for imshow with RGB data)
+
     fig = plt.figure(figsize = (10, 5))
 
     x = x.to('cpu')
@@ -70,16 +76,17 @@ def log_reconstruction(x, model, epoch, tmp_img="tmp_reconstruction.png", color=
     plt.close(fig)
     wandb.log({'reconstruction': wandb.Image(tmp_img), 'epoch': epoch})
     os.remove(tmp_img)
+
+    logger.setLevel(old_level)
     
 def log_latents(model, y, epoch, tmp_img="tmp_latent.png"):
-    fig = plt.figure(figsize = (5*model.n_layers, 5))
+    fig, axes = plt.subplots(model.n_nodes, 1, figsize = (5, 5*model.n_nodes))
     
     # plot the latent samples
-    z = model.get_latents().to('cpu')
     try:
-        for l in range(model.n_layers):
-            ax = fig.add_subplot(1, model.n_layers, l)
-            visualize_latent(ax, z[l], y)
+        for n in range(model.n_nodes):
+            axes[n].set_ylabel(f'Level {model.n_nodes - n}')
+            visualize_latent(axes[n], model.mus[n].detach(), y)
         
     except Exception as e:
         print(f"Could not generate the plot of the latent samples because of exception")
@@ -92,7 +99,7 @@ def log_latents(model, y, epoch, tmp_img="tmp_latent.png"):
     os.remove(tmp_img)
 
 def log_mnist_plots(model, x, y, epoch):
-    log_reconstruction(x, model, epoch, color = True)
+    log_reconstruction(x, model, epoch)
     log_latents(model, y, epoch)
 
 def make_pc_plots(model, x, y, training_errors, validation_errors, weights, color=False, tmp_img="tmp_pc_out.png"):

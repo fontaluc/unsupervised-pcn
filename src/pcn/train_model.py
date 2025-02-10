@@ -3,7 +3,7 @@ from pcn.models import PCModel
 import wandb
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-import torch.optim as optim
+from pcn import optim
 import numpy as np
 import os
 import shutil
@@ -11,7 +11,7 @@ from pcn import utils
 from pcn import plotting
 import argparse
 
-def train(training_errors, train_loader, model, optimizer, epoch, n_train_iters, fixed_preds_train):
+def train(train_loader, model, optimizer, epoch, n_train_iters, fixed_preds_train):
     training_epoch_errors = [[] for _ in range(model.n_nodes)]
     for batch_id, (img_batch, label_batch) in enumerate(train_loader):
         img_batch = utils.set_tensor(img_batch)
@@ -28,15 +28,19 @@ def train(training_errors, train_loader, model, optimizer, epoch, n_train_iters,
 
         # gather data for the current batch
         for n in range(model.n_nodes):
-            training_epoch_errors[n] += [errors[n].mean().item()]
+            training_epoch_errors[n] += [errors[:, n].mean().item()]
             
     # gather data for the full epoch
+    training_errors = []
     for n in range(model.n_nodes):
-        training_errors[n] += [np.mean(training_epoch_errors[n])]
-    return training_errors
+        error = np.mean(training_epoch_errors[n])
+        wandb.log({f'errors_{n}_train': error, 'epoch': epoch})
+        training_errors.append(error)
+
+    return training_errors    
         
 
-def eval(validation_errors, valid_loader, model, n_test_iters, fixed_preds_test):
+def eval(valid_loader, model, epoch, n_test_iters, fixed_preds_test):
     # Validation on a single batch
     img_batch, label_batch = next(iter(valid_loader))
     img_batch = utils.set_tensor(img_batch)
@@ -45,11 +49,13 @@ def eval(validation_errors, valid_loader, model, n_test_iters, fixed_preds_test)
     )
     errors = model.get_errors()
     for n in range(model.n_nodes):
-        validation_errors[n] += [errors[n].mean().item()]
-    return img_batch, label_batch, validation_errors
+        error = errors[:, n].mean().item()
+        wandb.log({f'errors_{n}_valid': error, 'epoch': epoch})
+
+    return img_batch, label_batch
     
 def main(cf):
-    wandb.init(project="unsupervised-pc")
+    wandb.init(project="unsupervised-pcn")
     location = wandb.run.dir
 
     utils.seed(cf.seed)
@@ -87,43 +93,39 @@ def main(cf):
         weight_decay=cf.weight_decay,
     )
 
-    # define dictionary to store the training curves
-    training_errors = [[] for _ in range(model.n_nodes)]
-    validation_errors = [[] for _ in range(model.n_nodes)]
-    weights = [[] for _ in range(model.n_layers)]
-
     stop = False
     epoch = 0
     with torch.no_grad():
         while not stop:
             # Training
-            training_errors = train(
-                training_errors, 
+            training_errors = train( 
                 train_loader, 
                 model, 
                 optimizer, 
                 epoch, 
                 cf.n_train_iters, 
                 cf.fixed_preds_train)
-            for n in range(model.n_nodes):
-                wandb.log({f'errors_{n}_train': training_errors[n][-1], 'epoch': epoch})
+
             for l in range(model.n_layers):
-                weights[l] += [model.get_weights()[l]]
-                wandb.log({f'weights_{l}': weights[l][-1], 'epoch': epoch})
+                weights = model.get_weights()[l]
+                wandb.log({f'weights_{l}': weights, 'epoch': epoch})
+
             # Validation
-            img_batch, label_batch, validation_errors = eval(
-                validation_errors, 
+            img_batch, label_batch = eval( 
                 valid_loader, 
                 model, 
+                epoch,
                 cf.n_test_iters, 
                 cf.fixed_preds_test
             )
-            for n in range(model.n_nodes):
-                wandb.log({f'errors_{n}_valid': validation_errors[n][-1], 'epoch': epoch})
+
             plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
 
-            for n in range(1, model.n_nodes):
-                stop =  stop & abs(training_errors[n][-2] -  training_errors[n][-1]) < cf.fun_tolerance*(1 + abs(training_errors[n][-2]))
+            # Stopping criteria
+            if epoch > 0:
+                for n in range(1, model.n_nodes):
+                    stop =  stop & (abs(old_training_errors[n] -  training_errors[n]) < cf.fun_tolerance*(1 + abs(old_training_errors[n])))
+            old_training_errors = training_errors
             epoch += 1
 
     wandb.finish()
@@ -142,8 +144,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Script that trains the PC model on a training set of size N"
     )
-    parser.add_argument("--N", required=True, type=int, default=64, help="Enter training set size")
-    parser.add_argument("--seed", required=True, type=int, default=0, help="Enter seed")
+    parser.add_argument("--N", type=int, default=64, help="Enter training set size")
+    parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -182,4 +184,4 @@ if __name__ == "__main__":
     cf.nodes = [2, 35, 784]
     cf.act_fn = utils.Tanh()
 
-    main()
+    main(cf)
