@@ -1,9 +1,9 @@
 #!/bin/sh
 ### General options
 ### –- specify queue --
-#SBATCH -C v100
+#SBATCH -C a100
 ### -- set the job Name AND the job array --
-#BSUB -J train_AM
+#SBATCH -J train_AM
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
@@ -22,14 +22,11 @@
 #SBATCH -e /home/lfontain/unsupervised-pc/outputs/logs/train_AM_%J.err
 # -- end of Slurm options --
 
-unset PYTHONHOME
-unset PYTHONPATH
-source $HOME/miniconda3/bin/activate
 
-nvidia-smi
-# Load the cuda module
-module swap cuda/11.6
+# Load modules
+module load build/conda/4.10
+module load cuda/11.6
 
-/appl/cuda/11.6.0/samples/bin/x86_64/linux/release/deviceQuery
+conda activate torch_env
 
-python3 src/models/train_model.py
+srun python $HOME/unsupervised-pcn/src/pcn/train_model.py --seed=1
