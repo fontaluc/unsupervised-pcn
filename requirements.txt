@@ -4,6 +4,4 @@ numpy==2.2.2
 scikit_learn==1.6.1
 seaborn==0.13.2
 setuptools==75.1.0
-torch==2.6.0+cu118
-torchvision==0.21.0+cu118
 wandb==0.19.6

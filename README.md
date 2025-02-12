@@ -23,6 +23,10 @@ conda activate torch_env
 module load tools/git/2.36.0
 git clone https://github.com/fontaluc/unsupervised-pcn.git
 ```
+* Install pytorch using the official Pytorch index and not using PyPI with requirements.txt because CUDA-specific versions of CUDA are not listed in PyPI
+```
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+```
 * Install project as package
 ```
 pip install unsupervised-pcn
@@ -41,3 +45,4 @@ module avail
 ```
 nvidia-smi
 ```
+We use A100 nodes in PLaFRIM which have CUDA 12.3. NVIDIA drivers are backward compatible with older CUDA versions, so we can install Pytorch built for CUDA 11.8 (latest Pytorch version is not built for 12.3). 

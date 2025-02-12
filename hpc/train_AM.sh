@@ -9,7 +9,7 @@
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #SBATCH --exclusive
 ### -- set walltime limit: hh:mm --  maximum 24 hours for GPU-queues right now
-#SBATCH -time 10:0:0
+#SBATCH --time 10:00:00
 ### -- set the email address --
 # please uncomment the following line and put in your e-mail address,
 # if you want to receive e-mail notifications on a non-default address
