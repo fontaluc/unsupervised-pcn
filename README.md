@@ -33,7 +33,7 @@ pip install unsupervised-pcn
 ```
 * Launch job on PLaFRIM
 ```
-sbatch train_AM.sh
+sbatch hpc/train_AM.sh
 ```
 
 ## Useful command lines on PLaFRIM

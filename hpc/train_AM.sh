@@ -13,13 +13,13 @@
 ### -- set the email address --
 # please uncomment the following line and put in your e-mail address,
 # if you want to receive e-mail notifications on a non-default address
-##SBATCH --mail-user=your_email_address
+#SBATCH --mail-user=fontaluc@gmail.com
 ### -- send notification at start and completion --
 #SBATCH --mail-type=BEGIN,END
 ### -- Specify the output and error file. %J is the job-id --
 ### -- -o and -e mean append, -oo and -eo mean overwrite --
-#SBATCH -o /home/lfontain/unsupervised-pc/outputs/logs/train_AM_%J.out
-#SBATCH -e /home/lfontain/unsupervised-pc/outputs/logs/train_AM_%J.err
+#SBATCH -o $HOME/unsupervised-pcn/outputs/logs/train_AM_%J.out
+#SBATCH -e $HOME/unsupervised-pcn/outputs/logs/train_AM_%J.err
 # -- end of Slurm options --
 
 
