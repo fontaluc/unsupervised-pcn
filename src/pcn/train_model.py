@@ -55,7 +55,8 @@ def eval(valid_loader, model, epoch, n_test_iters, fixed_preds_test):
     return img_batch, label_batch
     
 def main(cf):
-    wandb.init(project="unsupervised-pcn")
+    wandb.login()
+    wandb.init(project="unsupervised-pcn", config=cf)
     location = wandb.run.dir
 
     utils.seed(cf.seed)

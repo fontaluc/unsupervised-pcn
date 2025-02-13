@@ -1,5 +1,7 @@
 # Run experiments on PLaFRIM
 
+Prerequisite: create an account on wandb.ai and retrieve your API key (in User Settings)
+
 ## Steps 
 * Create an account on PLaFRIM
 * Connect to PLaFRIM using Git Bash
@@ -30,6 +32,10 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 * Install project as package
 ```
 pip install unsupervised-pcn
+```
+* Set the WANDB_API_KEY environment variable to your API key
+```
+export WANDB_API_KEY=<your_api_key>
 ```
 * Launch job on PLaFRIM
 ```
