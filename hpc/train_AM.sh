@@ -8,8 +8,8 @@
 #SBATCH -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #SBATCH --exclusive
-### -- set walltime limit: hh:mm --  maximum 24 hours for GPU-queues right now
-#SBATCH --time 10:00:00
+### -- set walltime limit: h:m:s
+#SBATCH --time 10:0:0
 ### -- set the email address --
 # please uncomment the following line and put in your e-mail address,
 # if you want to receive e-mail notifications on a non-default address
@@ -18,8 +18,8 @@
 #SBATCH --mail-type=BEGIN,END
 ### -- Specify the output and error file. %J is the job-id --
 ### -- -o and -e mean append, -oo and -eo mean overwrite --
-#SBATCH -o $HOME/unsupervised-pcn/outputs/logs/train_AM_%J.out
-#SBATCH -e $HOME/unsupervised-pcn/outputs/logs/train_AM_%J.err
+#SBATCH -o /home/lfontain/unsupervised-pcn/outputs/logs/train_AM_%J.out
+#SBATCH -e /home/lfontain/unsupervised-pcn/outputs/logs/train_AM_%J.err
 # -- end of Slurm options --
 
 
