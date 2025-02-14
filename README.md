@@ -39,7 +39,7 @@ export WANDB_API_KEY=<your_api_key>
 ```
 * Launch job on PLaFRIM
 ```
-sbatch hpc/train_AM.sh
+sbatch unsupervised-pcn/hpc/train_AM.sh
 ```
 
 ## Useful command lines on PLaFRIM

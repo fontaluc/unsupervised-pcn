@@ -29,4 +29,5 @@ module load cuda/12.3
 
 conda activate torch_env
 
+srun python $HOME/unsupervised-pcn/src/pcn/make_mnist.py
 srun python $HOME/unsupervised-pcn/src/pcn/train_model.py --seed=1
