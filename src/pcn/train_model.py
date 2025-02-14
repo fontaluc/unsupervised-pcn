@@ -1,5 +1,5 @@
 import pickle
-from pcn.models import PCModel
+from pcn.models import iPCModel
 import wandb
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -82,7 +82,7 @@ def main(cf):
         generator=g
     )
 
-    model = PCModel(
+    model = iPCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
     optimizer = optim.get_optim(
@@ -143,7 +143,7 @@ def main(cf):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Script that trains the PC model on a training set of size N"
+        description="Script that trains the iPC model on a training set of size N"
     )
     parser.add_argument("--N", type=int, default=64, help="Enter training set size")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
@@ -154,7 +154,7 @@ if __name__ == "__main__":
 
     # experiment params
     cf.seed = args.seed
-    cf.fun_tolerance = 1e-5
+    cf.fun_tolerance = 1e-3
 
     # dataset params
     cf.train_size = None
@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     # optim params
     cf.optim = "Adam"
-    cf.lr = 1e-4
+    cf.lr = 1e-5
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None
