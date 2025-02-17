@@ -2,8 +2,10 @@
 ### General options
 ### –- specify queue --
 #SBATCH -C a100
-### -- set the job Name AND the job array --
-#SBATCH -J exp2_train_iPC
+### -- set the job Name --
+#SBATCH -J train_iPC
+### -- set the job array --
+#SBATCH --array=1-2
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
@@ -29,5 +31,7 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
+N=(64 10097)
+n=${N[$SLURM_ARRAY_TASK_ID - 1]}
 srun python $HOME/unsupervised-pcn/src/pcn/make_mnist.py
-srun python $HOME/unsupervised-pcn/src/pcn/train_model.py
+srun python $HOME/unsupervised-pcn/src/pcn/train_model.py --N=$n

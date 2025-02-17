@@ -127,6 +127,17 @@ def main(cf):
                 for n in range(1, model.n_nodes):
                     stop =  stop & (abs(old_training_errors[n] -  training_errors[n]) < cf.fun_tolerance*(1 + abs(old_training_errors[n])))
             old_training_errors = training_errors
+
+            # Save model parameters and clean media directory before HPC time limit is reached
+            if epoch%cf.save_freq==0:
+                # Remove local media directory
+                path = os.path.join(location, 'media')
+                shutil.rmtree(path)
+
+                # Save model parameters
+                with open(f"models/ipc-{cf.N}-params.pkl", "wb") as f:
+                    pickle.dump(model.params, f)               
+                
             epoch += 1
 
     wandb.finish()
@@ -135,7 +146,7 @@ def main(cf):
     shutil.rmtree(path)
 
     # Save model parameters
-    with open(f"models/pc-{cf.N}-params.pkl", "wb") as f:
+    with open(f"models/ipc-{cf.N}-params.pkl", "wb") as f:
         pickle.dump(model.params, f)
 
              
@@ -155,6 +166,7 @@ if __name__ == "__main__":
     # experiment params
     cf.seed = args.seed
     cf.fun_tolerance = 1e-3
+    cf.save_freq = 10000
 
     # dataset params
     cf.train_size = None
