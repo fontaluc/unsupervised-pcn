@@ -94,6 +94,10 @@ def main(cf):
         weight_decay=cf.weight_decay,
     )
 
+    # Create models folder if it doesn't exist
+    if not os.path.exists("models"):
+        os.makedirs("models")
+
     stop = False
     epoch = 0
     with torch.no_grad():
@@ -122,22 +126,22 @@ def main(cf):
 
             plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
 
-            # Stopping criteria
             if epoch > 0:
+                # Stopping criteria
                 for n in range(1, model.n_nodes):
                     stop =  stop & (abs(old_training_errors[n] -  training_errors[n]) < cf.fun_tolerance*(1 + abs(old_training_errors[n])))
-            old_training_errors = training_errors
-
-            # Save model parameters and clean media directory before HPC time limit is reached
-            if epoch%cf.save_freq==0:
-                # Remove local media directory
-                path = os.path.join(location, 'media')
-                shutil.rmtree(path)
-
-                # Save model parameters
-                with open(f"models/ipc-{cf.N}-params.pkl", "wb") as f:
-                    pickle.dump(model.params, f)               
                 
+                # Save model parameters and clean media directory before HPC time limit is reached
+                if epoch%cf.save_freq==0:
+                    # Remove local media directory
+                    path = os.path.join(location, 'media')
+                    shutil.rmtree(path)
+                    
+                    # Save model parameters
+                    with open(f"models/ipc-{cf.N}-params.pkl", "wb") as f:
+                        pickle.dump(model.params, f) 
+
+            old_training_errors = training_errors          
             epoch += 1
 
     wandb.finish()
