@@ -10,7 +10,7 @@
 #SBATCH -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #SBATCH --exclusive
-### -- set walltime limit: h:m:s
+### -- set walltime limit: j-h:m:s
 #SBATCH --time 3-0
 ### -- set the email address --
 # please uncomment the following line and put in your e-mail address,
@@ -20,8 +20,8 @@
 #SBATCH --mail-type=BEGIN,END
 ### -- Specify the output and error file. %J is the job-id --
 ### -- -o and -e mean append, -oo and -eo mean overwrite --
-#SBATCH -o /home/lfontain/unsupervised-pcn/outputs/logs/train_AM_%J.out
-#SBATCH -e /home/lfontain/unsupervised-pcn/outputs/logs/train_AM_%J.err
+#SBATCH -o /home/lfontain/unsupervised-pcn/outputs/logs/train_iPC_%A_%a.out
+#SBATCH -e /home/lfontain/unsupervised-pcn/outputs/logs/train_iPC_%A_%a.err
 # -- end of Slurm options --
 
 
