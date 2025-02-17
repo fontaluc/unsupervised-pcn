@@ -11,6 +11,7 @@ import torch
 from IPython.display import Image, display, clear_output
 from pcn import utils
 import time
+import PIL.Image
 
 def plot_samples(ax, x, color=False):
     x = x.to('cpu')
@@ -74,7 +75,10 @@ def log_reconstruction(x, model, epoch, tmp_img="tmp_reconstruction.png", color=
     plt.tight_layout()
     plt.savefig(tmp_img)
     plt.close(fig)
-    wandb.log({'reconstruction': wandb.Image(tmp_img), 'epoch': epoch})
+
+    # Open it before deleting
+    image = PIL.Image.open(tmp_img)
+    wandb.log({'reconstruction': wandb.Image(image), 'epoch': epoch})
     os.remove(tmp_img)
 
     logger.setLevel(old_level)

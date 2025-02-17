@@ -33,7 +33,7 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 ```
 pip install unsupervised-pcn
 ```
-* Set the WANDB_API_KEY environment variable to your API key
+* Set the WANDB_API_KEY environment variable to your API key in .bashrc
 ```
 export WANDB_API_KEY=<your_api_key>
 ```
@@ -42,7 +42,7 @@ export WANDB_API_KEY=<your_api_key>
 sbatch unsupervised-pcn/hpc/train_AM.sh
 ```
 
-## Useful command lines on PLaFRIM
+## Useful tips for PLaFRIM
 * Check available modules
 ```
 module avail
@@ -52,3 +52,8 @@ module avail
 nvidia-smi
 ```
 We use A100 nodes in PLaFRIM which have CUDA 12.3. NVIDIA drivers are backward compatible with older CUDA versions, so we can install Pytorch built for CUDA 11.8 (latest Pytorch version is not built for 12.3). 
+* Load recurrent modules automatically after login, by adding in $HOME/.bashrc
+```
+module load modulename
+```
+where modulename is tools/git/2.36.0 for example. 
