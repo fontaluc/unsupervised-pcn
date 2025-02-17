@@ -3,13 +3,13 @@
 ### –- specify queue --
 #SBATCH -C a100
 ### -- set the job Name AND the job array --
-#SBATCH -J train_AM
+#SBATCH -J exp2_train_iPC
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #SBATCH --exclusive
 ### -- set walltime limit: h:m:s
-#SBATCH --time 10:0:0
+#SBATCH --time 3-0
 ### -- set the email address --
 # please uncomment the following line and put in your e-mail address,
 # if you want to receive e-mail notifications on a non-default address
@@ -30,4 +30,4 @@ module load compiler/cuda/12.3
 conda activate torch_env
 
 srun python $HOME/unsupervised-pcn/src/pcn/make_mnist.py
-srun python $HOME/unsupervised-pcn/src/pcn/train_model.py --seed=1
+srun python $HOME/unsupervised-pcn/src/pcn/train_model.py
