@@ -25,7 +25,7 @@
 
 # Load modules
 module load build/conda/4.10
-module load cuda/12.3
+module load compiler/cuda/12.3
 
 conda activate torch_env
 
