@@ -37,6 +37,10 @@ pip install unsupervised-pcn
 ```
 export WANDB_API_KEY=<your_api_key>
 ```
+* Apply changes 
+```
+source ~/.bashrc
+```
 * Launch job on PLaFRIM
 ```
 sbatch unsupervised-pcn/hpc/train_AM.sh
@@ -56,4 +60,7 @@ We use A100 nodes in PLaFRIM which have CUDA 12.3. NVIDIA drivers are backward c
 ```
 module load modulename
 ```
-where modulename is tools/git/2.36.0 for example. 
+where modulename is tools/git/2.36.0 for example. Apply changes with  
+```
+source ~/.bashrc
+```
