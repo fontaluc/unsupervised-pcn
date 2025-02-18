@@ -52,7 +52,10 @@ def visualize_latent(ax, z, y):
         print(f"Could not generate the plot of the latent samples because of exception")
         print(e)
 
-def log_reconstruction(x, model, epoch, tmp_img="tmp_reconstruction.png", color=False):
+def log_reconstruction(x, model, epoch, color=False):
+
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+        tmp_img = tmp_file.name  # Get unique file name
 
     logger = logging.getLogger()
     old_level = logger.level
@@ -75,17 +78,18 @@ def log_reconstruction(x, model, epoch, tmp_img="tmp_reconstruction.png", color=
 
     plt.tight_layout()
     plt.savefig(tmp_img)
-    plt.close(fig)
-
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
-        tmp_img = tmp_file.name  # Get unique file name
+    plt.close(fig)    
 
     wandb.log({'reconstruction': wandb.Image(tmp_img), 'epoch': epoch})
     os.remove(tmp_img)
 
     logger.setLevel(old_level)
     
-def log_latents(model, y, epoch, tmp_img="tmp_latent.png"):
+def log_latents(model, y, epoch):
+
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+        tmp_img = tmp_file.name  # Get unique file name
+
     fig, axes = plt.subplots(model.n_nodes, 1, figsize = (5, 5*model.n_nodes))
     
     # plot the latent samples
@@ -101,9 +105,6 @@ def log_latents(model, y, epoch, tmp_img="tmp_latent.png"):
     plt.tight_layout()
     plt.savefig(tmp_img)
     plt.close(fig)
-
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
-        tmp_img = tmp_file.name  # Get unique file name
 
     wandb.log({'latents': wandb.Image(tmp_img), 'epoch': epoch})
     os.remove(tmp_img)
