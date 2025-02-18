@@ -12,6 +12,7 @@ from IPython.display import Image, display, clear_output
 from pcn import utils
 import time
 import PIL.Image
+import tempfile
 
 def plot_samples(ax, x, color=False):
     x = x.to('cpu')
@@ -73,11 +74,14 @@ def log_reconstruction(x, model, epoch, tmp_img="tmp_reconstruction.png", color=
     plot_samples(ax, x_pred, color)
 
     plt.tight_layout()
+    plt.savefig(tmp_img)
     plt.close(fig)
 
-    # Open it before deleting
-    image = PIL.Image.open(tmp_img)
-    wandb.log({'reconstruction': wandb.Image(image), 'epoch': epoch})
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+        tmp_img = tmp_file.name  # Get unique file name
+
+    wandb.log({'reconstruction': wandb.Image(tmp_img), 'epoch': epoch})
+    os.remove(tmp_img)
 
     logger.setLevel(old_level)
     
@@ -95,11 +99,14 @@ def log_latents(model, y, epoch, tmp_img="tmp_latent.png"):
         print(e)
 
     plt.tight_layout()
+    plt.savefig(tmp_img)
     plt.close(fig)
 
-    # Open it before deleting
-    image = PIL.Image.open(tmp_img)
-    wandb.log({'latents': wandb.Image(image), 'epoch': epoch})
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+        tmp_img = tmp_file.name  # Get unique file name
+
+    wandb.log({'latents': wandb.Image(tmp_img), 'epoch': epoch})
+    os.remove(tmp_img)
 
 def log_mnist_plots(model, x, y, epoch):
     log_reconstruction(x, model, epoch)
