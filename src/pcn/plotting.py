@@ -73,13 +73,11 @@ def log_reconstruction(x, model, epoch, tmp_img="tmp_reconstruction.png", color=
     plot_samples(ax, x_pred, color)
 
     plt.tight_layout()
-    plt.savefig(tmp_img)
     plt.close(fig)
 
     # Open it before deleting
     image = PIL.Image.open(tmp_img)
     wandb.log({'reconstruction': wandb.Image(image), 'epoch': epoch})
-    os.remove(tmp_img)
 
     logger.setLevel(old_level)
     
@@ -97,13 +95,11 @@ def log_latents(model, y, epoch, tmp_img="tmp_latent.png"):
         print(e)
 
     plt.tight_layout()
-    plt.savefig(tmp_img)
     plt.close(fig)
 
     # Open it before deleting
     image = PIL.Image.open(tmp_img)
     wandb.log({'latents': wandb.Image(image), 'epoch': epoch})
-    os.remove(tmp_img)
 
 def log_mnist_plots(model, x, y, epoch):
     log_reconstruction(x, model, epoch)
