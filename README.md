@@ -29,21 +29,23 @@ git clone https://github.com/fontaluc/unsupervised-pcn.git
 ```
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 ```
-* Install project as package
+* Install project as package (in editable mode)
 ```
-pip install unsupervised-pcn
+cd unsupervised-pcn
+pip install -e .
 ```
-* Set the WANDB_API_KEY environment variable to your API key in .bashrc
+If you do not intend to change the code from the package, you can remove "-e". 
+* Set the WANDB_API_KEY environment variable to your API key in .bashrc and apply changes
 ```
 export WANDB_API_KEY=<your_api_key>
 ```
-* Apply changes 
+* Apply changes
 ```
 source ~/.bashrc
 ```
 * Launch job on PLaFRIM
 ```
-sbatch unsupervised-pcn/hpc/train_AM.sh
+sbatch hpc/train_AM.sh
 ```
 
 ## Useful tips for PLaFRIM
