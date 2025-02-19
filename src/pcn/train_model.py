@@ -112,7 +112,7 @@ def main(cf):
     with torch.no_grad():
         while not stop:
             # Training
-            training_errors, _ = train( 
+            training_errors = train( 
                 train_loader, 
                 model, 
                 optimizer, 
