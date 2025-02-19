@@ -56,7 +56,7 @@ def eval(valid_loader, model, epoch, n_test_iters, fixed_preds_test):
     model.test_batch(
         img_batch, n_test_iters, fixed_preds=fixed_preds_test
     )
-    errors = model.get_errors()
+    errors = model.get_error_lengths()
     for n in range(model.n_nodes):
         error = errors[:, n].mean().item()
         wandb.log({f'errors_{n}_valid': error, 'epoch': epoch})
