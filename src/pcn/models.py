@@ -198,18 +198,25 @@ class PCModel(object):
     def get_target_loss(self):
         return torch.sum(self.errs[-1] ** 2).item()
     
-    def get_errors(self):
+    def get_error_lengths(self):
         batch_size = len(self.errs[0])
         errors = torch.empty(batch_size, self.n_nodes)
         for n in range(self.n_nodes):
-            errors[:, n]  = torch.sum(self.errs[n] ** 2, axis=1)
+            errors[:, n]  = torch.sum(self.errs[n] ** 2, axis=1)/self.nodes[n] 
         return errors
     
-    def get_weights(self):
+    def get_weight_lengths(self):
         weights = torch.empty(self.n_layers)
         for l in range(self.n_layers):
-            weights[l]  = self.layers[l].weights.sum()
+            weights[l]  = self.layers[l].weights.sum()/(self.nodes[l]*self.nodes[l+1])
         return weights
+    
+    def get_latent_lengths(self):
+        batch_size = len(self.errs[0])
+        latents = torch.empty(batch_size, self.n_nodes - 1)
+        for n in range(self.n_nodes - 1):
+            latents[:, n]  = torch.sum(self.mus[n] ** 2, axis=1)/self.nodes[n] 
+        return latents
     
     def get_latents(self):
         return self.mus[:-1]
@@ -415,18 +422,25 @@ class iPCModel(object):
     def get_target_loss(self):
         return torch.sum(self.errs[-1] ** 2).item()
     
-    def get_errors(self):
+    def get_error_lengths(self):
         batch_size = len(self.errs[0])
         errors = torch.empty(batch_size, self.n_nodes)
         for n in range(self.n_nodes):
-            errors[:, n]  = torch.sum(self.errs[n] ** 2, axis=1)
+            errors[:, n]  = torch.sum(self.errs[n] ** 2, axis=1)/self.nodes[n] 
         return errors
     
-    def get_weights(self):
+    def get_weight_lengths(self):
         weights = torch.empty(self.n_layers)
         for l in range(self.n_layers):
-            weights[l]  = self.layers[l].weights.sum()
+            weights[l]  = self.layers[l].weights.sum()/(self.nodes[l]*self.nodes[l+1])
         return weights
+    
+    def get_latent_lengths(self):
+        batch_size = len(self.errs[0])
+        latents = torch.empty(batch_size, self.n_nodes - 1)
+        for n in range(self.n_nodes - 1):
+            latents[:, n]  = torch.sum(self.mus[n] ** 2, axis=1)/self.nodes[n] 
+        return latents
     
     def get_latents(self):
         return self.mus[:-1]

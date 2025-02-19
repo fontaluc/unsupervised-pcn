@@ -13,12 +13,14 @@ import argparse
 
 def train(train_loader, model, optimizer, epoch, n_train_iters, fixed_preds_train):
     training_epoch_errors = [[] for _ in range(model.n_nodes)]
+    training_epoch_latents = [[] for _ in range(model.n_nodes)]
     for batch_id, (img_batch, label_batch) in enumerate(train_loader):
         img_batch = utils.set_tensor(img_batch)
         model.train_batch(
             img_batch, n_train_iters, fixed_preds=fixed_preds_train
         )
-        errors = model.get_errors()
+        errors = model.get_error_lengths()
+        latents = model.get_latent_lengths()
         optimizer.step(
             curr_epoch=epoch,
             curr_batch=batch_id,
@@ -29,6 +31,8 @@ def train(train_loader, model, optimizer, epoch, n_train_iters, fixed_preds_trai
         # gather data for the current batch
         for n in range(model.n_nodes):
             training_epoch_errors[n] += [errors[:, n].mean().item()]
+        for n in range(model.n_nodes - 1):
+            training_epoch_latents[n] += [latents[:, n].mean().item()]
             
     # gather data for the full epoch
     training_errors = []
@@ -36,8 +40,13 @@ def train(train_loader, model, optimizer, epoch, n_train_iters, fixed_preds_trai
         error = np.mean(training_epoch_errors[n])
         wandb.log({f'errors_{n}_train': error, 'epoch': epoch})
         training_errors.append(error)
+    training_latents = []
+    for n in range(model.n_nodes - 1):
+        latent = np.mean(training_epoch_latents[n])
+        wandb.log({f'latents_{n}_train': latent, 'epoch': epoch})
+        training_latents.append(latent)
 
-    return training_errors    
+    return training_errors  
         
 
 def eval(valid_loader, model, epoch, n_test_iters, fixed_preds_test):
@@ -103,7 +112,7 @@ def main(cf):
     with torch.no_grad():
         while not stop:
             # Training
-            training_errors = train( 
+            training_errors, _ = train( 
                 train_loader, 
                 model, 
                 optimizer, 
@@ -112,7 +121,7 @@ def main(cf):
                 cf.fixed_preds_train)
 
             for l in range(model.n_layers):
-                weights = model.get_weights()[l]
+                weights = model.get_weight_lengths()[l]
                 wandb.log({f'weights_{l}': weights, 'epoch': epoch})
 
             # Validation
@@ -142,7 +151,11 @@ def main(cf):
             old_training_errors = training_errors          
             epoch += 1
 
-    wandb.finish()            
+    wandb.finish()
+
+    # Save final model parameters
+    with open(f"models/ipc-{cf.N}-params.pkl", "wb") as f:
+        pickle.dump(model.params, f)             
 
 if __name__ == "__main__":
 
