@@ -51,15 +51,17 @@ class SGD(Optimizer):
 
     def step(self, *args, batch_size=None, **kwargs):
         for param in self._params:
-            _lr = self.q_lr if param.is_forward else self.lr
-            self.scale_batch(param, batch_size)
-            self.clip_grads(param)
-            self.decay_weights(param)
+                # Update parameters if gradients of bias (if it is used) and weights are not None
+                if param.grad["weights"] is not None and (not param.use_bias or param.grad["bias"] is not None):
+                    _lr = self.q_lr if param.is_forward else self.lr
+                    self.scale_batch(param, batch_size)
+                    self.clip_grads(param)
+                    self.decay_weights(param)
 
-            param.weights += _lr * param.grad["weights"]
-            if param.use_bias:
-                param.bias += _lr * param.grad["bias"]
-            param._reset_grad()
+                    param.weights += _lr * param.grad["weights"]
+                    if param.use_bias:
+                        param.bias += _lr * param.grad["bias"]
+                    param._reset_grad()
 
 
 class Adam(Optimizer):
@@ -94,22 +96,23 @@ class Adam(Optimizer):
             t = (curr_epoch) * n_batches + curr_batch
 
             for p, param in enumerate(self._params):
-                _lr = self.q_lr if param.is_forward else self.lr
-                self.scale_batch(param, batch_size)
-                self.clip_grads(param)
-                self.decay_weights(param)
+                if param.grad["weights"] is not None and (not param.use_bias or param.grad["bias"] is not None):
+                    _lr = self.q_lr if param.is_forward else self.lr
+                    self.scale_batch(param, batch_size)
+                    self.clip_grads(param)
+                    self.decay_weights(param)
 
-                self.c_w[p] = self.beta_1 * self.c_w[p] + (1 - self.beta_1) * param.grad["weights"]
-                self.v_w[p] = self.beta_2 * self.v_w[p] + (1 - self.beta_2) * param.grad["weights"] ** 2
-                delta_w = np.sqrt(1 - self.beta_2 ** t) * self.c_w[p] / (torch.sqrt(self.v_w[p]) + self.eps)
-                param.weights += _lr * delta_w
+                    self.c_w[p] = self.beta_1 * self.c_w[p] + (1 - self.beta_1) * param.grad["weights"]
+                    self.v_w[p] = self.beta_2 * self.v_w[p] + (1 - self.beta_2) * param.grad["weights"] ** 2
+                    delta_w = np.sqrt(1 - self.beta_2 ** t) * self.c_w[p] / (torch.sqrt(self.v_w[p]) + self.eps)
+                    param.weights += _lr * delta_w
 
-                if param.use_bias:
-                    self.c_b[p] = self.beta_1 * self.c_b[p] + (1 - self.beta_1) * param.grad["bias"]
-                    self.v_b[p] = self.beta_2 * self.v_b[p] + (1 - self.beta_2) * param.grad["bias"] ** 2
-                    delta_b = (
-                        np.sqrt(1 - self.beta_2 ** t) * self.c_b[p] / (torch.sqrt(self.v_b[p]) + self.eps)
-                    )
-                    param.bias += _lr * delta_b
+                    if param.use_bias:
+                        self.c_b[p] = self.beta_1 * self.c_b[p] + (1 - self.beta_1) * param.grad["bias"]
+                        self.v_b[p] = self.beta_2 * self.v_b[p] + (1 - self.beta_2) * param.grad["bias"] ** 2
+                        delta_b = (
+                            np.sqrt(1 - self.beta_2 ** t) * self.c_b[p] / (torch.sqrt(self.v_b[p]) + self.eps)
+                        )
+                        param.bias += _lr * delta_b
 
-                param._reset_grad()
+                    param._reset_grad()

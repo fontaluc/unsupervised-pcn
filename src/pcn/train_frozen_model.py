@@ -145,7 +145,7 @@ def main(cf):
                 shutil.rmtree(path)
                 
                 # Save model parameters
-                with open(f"{location}/ipc-{cf.N}-params.pkl", "wb") as f:
+                with open(f"{location}/pc-{cf.N}-params.pkl", "wb") as f:
                     pickle.dump(model.params, f) 
 
             old_training_errors = training_errors          
@@ -171,7 +171,7 @@ if __name__ == "__main__":
 
     # experiment params
     cf.seed = args.seed
-    cf.fun_tolerance = 1e-3
+    cf.fun_tolerance = 1e-5
     cf.save_freq = 10000
 
     # dataset params
