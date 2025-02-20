@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader, TensorDataset
 from pcn import optim
 import numpy as np
 import os
-import shutil
 from pcn import utils
 from pcn import plotting
 import argparse
@@ -139,10 +138,6 @@ def main(cf):
                 for l in layers_in_progress:
                     if abs(old_training_errors[l+1] -  training_errors[l+1]) < cf.fun_tolerance*(1 + abs(old_training_errors[l+1])):
                         layers_in_progress.remove(l)
-
-                # Remove local media directory
-                path = os.path.join(location, 'media')
-                shutil.rmtree(path)
                 
                 # Save model parameters
                 with open(f"{location}/pc-{cf.N}-params.pkl", "wb") as f:
