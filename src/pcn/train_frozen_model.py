@@ -1,5 +1,5 @@
 import pickle
-from pcn.models import iPCModel
+from pcn.models import PCModel
 import wandb
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -11,13 +11,13 @@ from pcn import utils
 from pcn import plotting
 import argparse
 
-def train(train_loader, model, optimizer, epoch, n_train_iters, fixed_preds_train):
+def train(train_loader, model, optimizer, layers_in_progress, epoch, n_train_iters, fixed_preds_train):
     training_epoch_errors = [[] for _ in range(model.n_nodes)]
     training_epoch_latents = [[] for _ in range(model.n_nodes)]
     for batch_id, (img_batch, label_batch) in enumerate(train_loader):
         img_batch = utils.set_tensor(img_batch)
         model.train_batch(
-            img_batch, n_train_iters, layers_in_progress=range(model.n_layers), fixed_preds=fixed_preds_train
+            img_batch, n_train_iters, layers_in_progress, fixed_preds=fixed_preds_train
         )
         errors = model.get_error_lengths()
         latents = model.get_latent_lengths()
@@ -89,7 +89,7 @@ def main(cf):
         generator=g
     )
 
-    model = iPCModel(
+    model = PCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
     optimizer = optim.get_optim(
@@ -114,6 +114,7 @@ def main(cf):
                 train_loader, 
                 model, 
                 optimizer, 
+                layers_in_progress,
                 epoch, 
                 cf.n_train_iters, 
                 cf.fixed_preds_train)
@@ -153,13 +154,13 @@ def main(cf):
     wandb.finish()
 
     # Save final model parameters
-    with open(f"models/ipc-{cf.N}-params.pkl", "wb") as f:
+    with open(f"models/pc-{cf.N}-params.pkl", "wb") as f:
         pickle.dump(model.params, f)             
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Script that trains the iPC model on a training set of size N"
+        description="Script that trains each layer of a PC model until convergence on a training set of size N."
     )
     parser.add_argument("--N", type=int, default=64, help="Enter training set size")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
@@ -183,7 +184,7 @@ if __name__ == "__main__":
 
     # optim params
     cf.optim = "Adam"
-    cf.lr = 1e-5
+    cf.lr = 1e-4
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None

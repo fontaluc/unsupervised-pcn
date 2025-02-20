@@ -40,13 +40,13 @@ class PCModel(object):
     def set_input(self, inp):
         self.mus[0] = inp.clone()
 
-    def train_batch(self, img_batch, n_iters, init_std=0.05, fixed_preds=False):
+    def train_batch(self, img_batch, n_iters, layers_in_progress, init_std=0.05, fixed_preds=False):
         batch_size = img_batch.size(0)
         self.reset()
         self.reset_mus(batch_size, init_std)
         self.set_target(img_batch)
         self.updates(n_iters, fixed_preds=fixed_preds)
-        self.update_grads()
+        self.update_grads(layers_in_progress)
     
     def test_batch(self, img_batch, n_iters, init_std=0.05, fixed_preds=False):
         batch_size = img_batch.size(0)
@@ -191,8 +191,8 @@ class PCModel(object):
             stop = (relative_diff < step_tolerance).sum().item()
             itr += 1            
 
-    def update_grads(self):
-        for l in range(self.n_layers):
+    def update_grads(self, layers_in_progress):
+        for l in layers_in_progress:
             self.layers[l].update_gradient(self.errs[l + 1])
 
     def get_target_loss(self):
@@ -263,19 +263,19 @@ class iPCModel(object):
     def set_input(self, inp):
         self.mus[0] = inp.clone()
 
-    def train_batch(self, img_batch, n_iters, init_std=0.05, fixed_preds=False):
+    def train_batch(self, img_batch, n_iters, layers_in_progress, init_std=0.05, fixed_preds=False):
         batch_size = img_batch.size(0)
         self.reset()
         self.reset_mus(batch_size, init_std)
         self.set_target(img_batch)
-        self.updates(n_iters, fixed_preds=fixed_preds, train=True)
+        self.updates(n_iters, layers_in_progress, fixed_preds=fixed_preds)
     
     def test_batch(self, img_batch, n_iters, init_std=0.05, fixed_preds=False):
         batch_size = img_batch.size(0)
         self.reset()
         self.reset_mus(batch_size, init_std)
         self.set_target(img_batch)
-        self.updates(n_iters, fixed_preds=fixed_preds, train=False)
+        self.updates(n_iters, layers_in_progress = [], fixed_preds=fixed_preds)
     
     def replay_batch(self, img_batch, label_batch, n_iters, step_tolerance=1e-6, init_std=0.05, fixed_preds=False, train=False):
         batch_size = img_batch.size(0)
@@ -319,7 +319,7 @@ class iPCModel(object):
             stop = (relative_diff < step_tolerance).sum().item()
             itr += 1       
         
-    def updates(self, n_iters, fixed_preds=False, train=True):
+    def updates(self, n_iters, layers_in_progress, fixed_preds=False, train=True):
         self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
         self.errs[0] = self.mus[0] - self.preds[0]
         for n in range(1, self.n_nodes):
@@ -336,8 +336,7 @@ class iPCModel(object):
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
                 self.errs[n] = self.mus[n] - self.preds[n]
             
-            if train:
-                self.update_grads()
+            self.update_grads(layers_in_progress)
 
     def test_convergence(self, img_batch, n_iters, step_tolerance=1e-6, init_std=0.05, fixed_preds=False):
         batch_size = img_batch.size(0)
@@ -415,8 +414,8 @@ class iPCModel(object):
             stop = (relative_diff < step_tolerance).sum().item()
             itr += 1       
 
-    def update_grads(self):
-        for l in range(self.n_layers):
+    def update_grads(self, layers_in_progress):
+        for l in layers_in_progress:
             self.layers[l].update_gradient(self.errs[l + 1])
 
     def get_target_loss(self):
