@@ -202,13 +202,13 @@ class PCModel(object):
         batch_size = len(self.errs[0])
         errors = torch.empty(batch_size, self.n_nodes)
         for n in range(self.n_nodes):
-            errors[:, n]  = torch.sum(self.errs[n] ** 2, axis=1)/self.nodes[n] 
+            errors[:, n]  = torch.sum(self.errs[n] ** 2, axis=1)/self.nodes[n]
         return errors
     
     def get_weight_lengths(self):
         weights = torch.empty(self.n_layers)
         for l in range(self.n_layers):
-            weights[l]  = self.layers[l].weights.sum()/(self.nodes[l]*self.nodes[l+1])
+            weights[l]  = torch.sum(self.layers[l].weights ** 2, axis=1)/(self.nodes[l]*self.nodes[l+1])
         return weights
     
     def get_latent_lengths(self):
@@ -431,7 +431,7 @@ class iPCModel(object):
     def get_weight_lengths(self):
         weights = torch.empty(self.n_layers)
         for l in range(self.n_layers):
-            weights[l]  = self.layers[l].weights.sum()/(self.nodes[l]*self.nodes[l+1])
+            weights[l]  = torch.sum(self.layers[l].weights ** 2, axis=1)/(self.nodes[l]*self.nodes[l+1])
         return weights
     
     def get_latent_lengths(self):
