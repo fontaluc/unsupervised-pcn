@@ -165,8 +165,7 @@ if __name__ == "__main__":
 
     # experiment params
     cf.seed = args.seed
-    cf.fun_tolerance = 1e-5
-    cf.save_freq = 10000
+    cf.fun_tolerance = 1e-7
 
     # dataset params
     cf.train_size = None
