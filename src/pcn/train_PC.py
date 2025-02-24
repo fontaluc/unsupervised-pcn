@@ -34,17 +34,12 @@ def train(train_loader, model, optimizer, epoch, n_train_iters, fixed_preds_trai
             training_epoch_latents[n] += [latents[:, n].mean().item()]
             
     # gather data for the full epoch
-    training_errors = []
     for n in range(model.n_nodes):
         error = np.mean(training_epoch_errors[n])
         wandb.log({f'errors_{n}_train': error, 'epoch': epoch})
-        training_errors.append(error)
     for n in range(model.n_nodes - 1):
         latent = np.mean(training_epoch_latents[n])
-        wandb.log({f'latents_{n}_train': latent, 'epoch': epoch})
-
-    return training_errors  
-        
+        wandb.log({f'latents_{n}_train': latent, 'epoch': epoch})        
 
 def eval(valid_loader, model, epoch, n_test_iters, fixed_preds_test):
     # Validation on a single batch
@@ -98,18 +93,12 @@ def main(cf):
         batch_scale=cf.batch_scale,
         grad_clip=cf.grad_clip,
         weight_decay=cf.weight_decay,
-    )
+    )  
 
-    # Create models folder if it doesn't exist
-    if not os.path.exists("models"):
-        os.makedirs("models")
-
-    epoch = 0
-    stop = False
     with torch.no_grad():
-        while not stop:
+        for epoch in range(cf.n_epochs):
             # Training
-            training_errors = train( 
+            train( 
                 train_loader, 
                 model, 
                 optimizer, 
@@ -132,21 +121,13 @@ def main(cf):
 
             plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
 
-            if epoch > 0:
-                # Stopping criteria
-                for n in range(model.n_nodes):
-                    stop = stop & (abs(old_training_errors[n] -  training_errors[n]) < cf.fun_tolerance*(1 + abs(old_training_errors[n])))
-                
-                # Save model parameters
-                with open(f"{location}/pc-{cf.N}-params.pkl", "wb") as f:
-                    pickle.dump(model.params, f) 
-
-            old_training_errors = training_errors          
-            epoch += 1
-
     wandb.finish()
 
-    # Save final model parameters
+    # Create models folder if it doesn't exist
+    if not os.path.exists("models"):
+        os.makedirs("models")
+
+    # Save model parameters
     with open(f"models/pc-{cf.N}-params.pkl", "wb") as f:
         pickle.dump(model.params, f)             
 
@@ -155,6 +136,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Script that trains the PC model on a training set of size N"
     )
+    parser.add_argument("--n_epochs", required=True, type=int, help="Enter number of epochs")
     parser.add_argument("--N", type=int, default=64, help="Enter training set size")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--lr", type=int, default=1e-4, help="Enter learning rate")
@@ -165,7 +147,7 @@ if __name__ == "__main__":
 
     # experiment params
     cf.seed = args.seed
-    cf.fun_tolerance = 1e-7
+    cf.n_epochs = args.n_epochs
 
     # dataset params
     cf.train_size = None
