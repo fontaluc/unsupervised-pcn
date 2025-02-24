@@ -11,7 +11,6 @@ import torch
 from IPython.display import Image, display, clear_output
 from pcn import utils
 import time
-import PIL.Image
 import tempfile
 
 def plot_samples(ax, x, color=False):
