@@ -478,7 +478,7 @@ class PCModule(nn.Module):
     def get_loss(self):
         return self.get_errors().sum(axis=0).mean()
     
-    def get_error_lengths(self):
+    def get_errors(self):
         batch_size = len(self.errs[0])
         errors = torch.empty(batch_size, self.n_nodes)
         for n in range(self.n_nodes):
@@ -521,7 +521,7 @@ class PCTrainer(object):
             self.train_batch(
                 img_batch, n_train_iters, fixed_preds=fixed_preds_train
             )
-            errors = self.model.get_error_lengths()
+            errors = self.model.get_errors()
 
             # gather data for the current batch
             for n in range(self.model.n_nodes):
@@ -541,7 +541,7 @@ class PCTrainer(object):
         self.test_batch(
             img_batch, n_test_iters, fixed_preds=fixed_preds_test
         )
-        errors = self.model.get_error_lengths()
+        errors = self.model.get_errors()
         validation_errors = []
         for n in range(self.model.n_nodes):
             validation_errors[n] = errors[n].mean().item()
