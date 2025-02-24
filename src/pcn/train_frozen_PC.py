@@ -106,6 +106,7 @@ def main(cf):
 
     epoch = 0
     layers_in_progress = [l for l in range(model.n_layers)]
+    n_epochs_stable = [0 for l in range(model.n_layers)]
     with torch.no_grad():
         while len(layers_in_progress) > 0:
             # Training
@@ -137,7 +138,9 @@ def main(cf):
                 # Stopping criteria
                 for l in layers_in_progress:
                     if abs(old_training_errors[l+1] -  training_errors[l+1]) < cf.fun_tolerance*(1 + abs(old_training_errors[l+1])):
-                        layers_in_progress.remove(l)
+                        n_epochs_stable[l] += 1
+                        if n_epochs_stable[l] > cf.patience:
+                            layers_in_progress.remove(l)
                 
                 # Save model parameters
                 with open(f"{location}/pc-{cf.N}-params.pkl", "wb") as f:
@@ -167,6 +170,7 @@ if __name__ == "__main__":
     # experiment params
     cf.seed = args.seed
     cf.fun_tolerance = 1e-7
+    cf.patience = 10
 
     # dataset params
     cf.train_size = None

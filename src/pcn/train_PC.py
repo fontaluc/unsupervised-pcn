@@ -157,6 +157,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--N", type=int, default=64, help="Enter training set size")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
+    parser.add_argument("--lr", type=int, default=1e-4, help="Enter learning rate")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -176,7 +177,7 @@ if __name__ == "__main__":
 
     # optim params
     cf.optim = "Adam"
-    cf.lr = 1e-4
+    cf.lr = args.lr
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None
