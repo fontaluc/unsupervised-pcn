@@ -529,7 +529,7 @@ class PCTrainer(object):
             
         # gather data for the full epoch
         training_errors = []
-        for n in range(self.n_nodes):
+        for n in range(self.model.n_nodes):
             error = np.mean(training_epoch_errors[n])
             training_errors.append(error)
         return training_errors 
