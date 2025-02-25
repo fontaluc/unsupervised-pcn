@@ -57,7 +57,7 @@ def main(cf):
         os.makedirs("models")
 
     n_epochs_stable = [0 for l in range(model.n_layers)]
-
+    epoch = 0
     while sum(n_epochs_stable) <= cf.patience*model.n_layers:
 
         training_errors = trainer.train(
@@ -77,22 +77,19 @@ def main(cf):
         if epoch > 0:
             # Stopping criteria
             for l in range(model.n_layers):
-                if n_epochs_stable[l] <= cf.patience:
+                if training_errors[l+1] < cf.error_ceil  and n_epochs_stable[l] <= cf.patience:
                     if abs(old_training_errors[l+1] -  training_errors[l+1]) < cf.fun_tolerance*(1 + abs(old_training_errors[l+1])):
                         n_epochs_stable[l] += 1
                         if n_epochs_stable[l] > cf.patience:
                             for param in model.layers[l].parameters():
                                 param.require_grad = False
-            
-            # Save model parameters
-            torch.save(model.state_dict(), f"{location}/pc-{cf.N}.pt")
 
         old_training_errors = training_errors          
         epoch += 1
 
     wandb.finish()
 
-    # Save final model parameters
+    # Save model parameters
     torch.save(model.state_dict(), f"{location}/pc-{cf.N}.pt")
 
 
@@ -112,6 +109,7 @@ if __name__ == "__main__":
     cf.seed = args.seed
     cf.fun_tolerance = 1e-3
     cf.patience = 10
+    cf.error_ceil = 1
 
     # dataset params
     cf.train_size = None

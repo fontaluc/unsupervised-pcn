@@ -27,5 +27,4 @@ conda activate torch_env
 
 N=(64 10097)
 n=${N[$SLURM_ARRAY_TASK_ID - 1]}
-srun python $HOME/unsupervised-pcn/src/pcn/make_mnist.py
 srun python $HOME/unsupervised-pcn/src/pcn/train_frozen_PC.py --N=$n

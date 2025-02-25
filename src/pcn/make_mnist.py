@@ -34,7 +34,7 @@ def make_mnist(data_path, classes = [4, 7]):
     torch.save(mnist_test, f'{data_path}/mnist_test.pt')
    
 if __name__ == "__main__":
-    data_path = "./data"
+    data_path = "data"
     dset_train = MNIST(data_path, train=True, download=True)
     dset_test  = MNIST(data_path, train=False, download=True)
     make_mnist(data_path)

@@ -43,6 +43,10 @@ export WANDB_API_KEY=<your_api_key>
 ```
 source ~/.bashrc
 ```
+* Create dataset
+```
+python src/pcn/make_mnist.py
+```
 * Launch job on PLaFRIM
 ```
 sbatch hpc/train_AM.sh
