@@ -525,7 +525,7 @@ class PCTrainer(object):
 
             # gather data for the current batch
             for n in range(self.model.n_nodes):
-                training_epoch_errors[n] += [errors[n].mean().item()]
+                training_epoch_errors[n] += [errors[:, n].mean().item()]
             
         # gather data for the full epoch
         training_errors = []
@@ -544,7 +544,7 @@ class PCTrainer(object):
         errors = self.model.get_errors()
         validation_errors = []
         for n in range(self.model.n_nodes):
-            validation_errors[n] = errors[n].mean().item()
+            validation_errors.append(errors[:, n].mean().item())
         return img_batch, label_batch, validation_errors
         
     def train_batch(self, img_batch, n_iters, init_std=0.05, fixed_preds=False):
