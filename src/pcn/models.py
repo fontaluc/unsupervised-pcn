@@ -523,7 +523,8 @@ class PCModule(nn.Module):
             for n in range(1, self.n_nodes):
                 if not fixed_preds:
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
-                self.errs[n] = self.mus[n] - self.preds[n]        
+                self.errs[n] = self.mus[n] - self.preds[n]
+        return self.mus # forward function of a module has to return something   
 
     def forward_test(self, img_batch, n_iters, step_tolerance=1e-5, init_std=0.05, fixed_preds=False):
         batch_size = img_batch.size(0)
@@ -555,7 +556,7 @@ class PCModule(nn.Module):
                     self.plot_batch_errors[m][n].append(self.get_errors()[m, n])
 
             stop = (relative_diff < step_tolerance).sum().item()
-            itr += 1      
+            itr += 1
 
     def update_grads(self):
         for l in range(self.n_layers):
@@ -578,11 +579,14 @@ class PCTrainer(object):
             for optim in self.optimizers:
                 optim.step()
             errors = self.model.get_errors()
-
-            step = batch_id*batch_size
+            
             # gather data for the current batch
             for n in range(self.model.n_nodes):
                 training_epoch_errors[n] += [errors[:, n].mean().item()]
+            
+            # log layer activations (except input)
+            step = batch_id*batch_size
+            for n in range(self.model.n_nodes - 1):
                 wandb.log({f'latents_{n}_train': wandb.Histogram(self.model.mus[n])}, step=step)
 
         # gather data for the full epoch
