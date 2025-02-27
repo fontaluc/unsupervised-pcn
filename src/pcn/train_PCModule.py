@@ -1,5 +1,4 @@
-import pickle
-from pcn.models import PCModel, PCTrainer
+from pcn.models import PCModule, PCTrainer
 import wandb
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -33,7 +32,7 @@ def main(cf):
         generator=g
     )
 
-    model = PCModel(
+    model = PCModule(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
     
