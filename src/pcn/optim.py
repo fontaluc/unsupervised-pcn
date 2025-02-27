@@ -18,7 +18,6 @@ def get_optim(params, optim_id, lr, q_lr=None, batch_scale=True, grad_clip=None,
 class Optimizer:
     def __init__(self, params, batch_scale=True, grad_clip=None, weight_decay=None):
         self._params = params
-        self.n_params = len(params)
         self.batch_scale = batch_scale
         self.grad_clip = grad_clip
         self.weight_decay = weight_decay
