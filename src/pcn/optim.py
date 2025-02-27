@@ -15,7 +15,7 @@ def get_optim(params, optim_id, lr, q_lr=None, batch_scale=True, grad_clip=None,
         raise ValueError(f"{optim_id} not a valid optimizer ID")
 
 
-class Optimizer(object):
+class Optimizer:
     def __init__(self, params, batch_scale=True, grad_clip=None, weight_decay=None):
         self._params = params
         self.n_params = len(params)
@@ -116,3 +116,73 @@ class Adam(Optimizer):
                         param.bias += _lr * delta_b
 
                     param._reset_grad()
+
+
+class LRScheduler:
+    def __init__(self, optimizer: Optimizer):
+        self.optimizer = optimizer
+    
+class ReduceLROnPlateau(LRScheduler):
+    """Reduce learning rate when a metric has stopped improving.
+
+    Models often benefit from reducing the learning rate by a factor
+    of 2-10 once learning stagnates. This scheduler reads a metrics
+    quantity and if no improvement is seen for a 'patience' number
+    of epochs, the learning rate is reduced.
+
+    Args:
+        optimizer (Optimizer): Wrapped optimizer.
+        mode (str): One of `min`, `max`. In `min` mode, lr will
+            be reduced when the quantity monitored has stopped
+            decreasing; in `max` mode it will be reduced when the
+            quantity monitored has stopped increasing. Default: 'min'.
+        factor (float): Factor by which the learning rate will be
+            reduced. new_lr = lr * factor. Default: 0.1.
+        patience (int): The number of allowed epochs with no improvement after
+            which the learning rate will be reduced.
+            For example, consider the case of having no patience (`patience = 0`).
+            In the first epoch, a baseline is established and is always considered good as there's no previous baseline.
+            In the second epoch, if the performance is worse than the baseline,
+            we have what is considered an intolerable epoch.
+            Since the count of intolerable epochs (1) is greater than the patience level (0),
+            the learning rate is reduced at the end of this epoch.
+            From the third epoch onwards, the learning rate continues to be reduced at the end of each epoch
+            if the performance is worse than the baseline. If the performance improves or remains the same,
+            the learning rate is not adjusted.
+            Default: 10.
+        threshold (float): Threshold for measuring the new optimum,
+            to only focus on significant changes. Default: 1e-4.
+
+    Adapted from Pytorch.
+    """
+
+    def __init__(self, optimizer: Optimizer, factor: float = 0.1, threshold: float = 1e-4):
+        self.optimizer = optimizer
+        self.factor = factor
+        self.threshold = threshold
+        self.best = None
+    
+    def step(self, metrics):
+        """Perform a step."""
+        # convert `metrics` to float, in case it's a zero-dim Tensor
+        current = float(metrics)
+
+        if self.best == None:
+            self.best = current
+
+        elif self.is_better(current, self.best):
+            self.best = current
+            self.num_bad_epochs = 0
+            
+        else:
+            self.num_bad_epochs += 1
+            if self.num_bad_epochs > self.patience:
+                self._reduce_lr()
+                self.num_bad_epochs = 0
+
+    def _reduce_lr(self):
+        self.optimizer.lr = self.optimizer.lr * self.factor
+
+    def is_better(self, a, best):
+        rel_epsilon = 1.0 - self.threshold
+        return a < best * rel_epsilon

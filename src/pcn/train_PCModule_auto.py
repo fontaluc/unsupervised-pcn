@@ -1,15 +1,16 @@
 import pickle
-from pcn.models import PCModel, PCTrainer
+from pcn.models import PCModule_auto, PCTrainer
 import wandb
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from pcn import optim
 import os
 from pcn import utils
 from pcn import plotting
 import argparse
     
 def main(cf):
+
+    # Seed for reproducibility
     utils.seed(cf.seed)
     g = torch.Generator()
     g.manual_seed(cf.seed)
@@ -33,39 +34,32 @@ def main(cf):
         generator=g
     )
 
-    model = PCModel(
-        nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
+    model = PCModule_auto(
+        nodes=cf.nodes,  
+        act_fn=cf.act_fn, 
+        use_bias=cf.use_bias, 
+        kaiming_init=cf.kaiming_init
     )
+    trainer = PCTrainer(
+        model, 
+        torch.optim.SGD, 
+        torch.optim.Adam, 
+        cf.mu_dt, 
+        cf.lr)
     
-    optimizers = [
-        optim.get_optim(
-            model.layers[l].parameters(),
-            cf.optim,
-            cf.lr,
-            batch_scale=cf.batch_scale,
-            grad_clip=cf.grad_clip,
-            weight_decay=cf.weight_decay,
-        )  
-        for l in range(model.n_layers)
-    ]
-
-    schedulers = [optim.ReduceLROnPlateau(optimizers[l], cf.factor, cf.threshold) for l in range(model.n_layers)]
-
-    trainer = PCTrainer(model, optimizers)
-
-    early_stopping = utils.EarlyStopping(cf.patience, cf.threshold)
-
     # Logging
     wandb.login()
-    run = wandb.init(project="unsupervised-pcn", config=cf)
-    run.watch(model, log='all') # log gradients and parameter values
+    wandb.init(project="unsupervised-pcn", config=cf)
+    wandb.watch(model, log='all') # log gradients and parameter values
     location = wandb.run.dir
 
     # Create models folder if it doesn't exist
     if not os.path.exists("models"):
         os.makedirs("models")
 
-    for epoch in range(cf.n_epochs):
+    n_epochs_stable = [[] for l in range(model.n_layers)]
+    epoch = 0
+    while sum(n_epochs_stable) <= cf.patience*model.n_layers:
 
         training_errors = trainer.train(
             train_loader, cf.n_train_iters, cf.fixed_preds_train
@@ -79,27 +73,33 @@ def main(cf):
         for n in range(model.n_nodes):
             wandb.log({f'errors_{n}_valid': validation_errors[n], 'epoch': epoch})
 
-        for l in range(model.n_layers):
-            schedulers[l].step(training_errors[l+1])
-
         plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
 
-        loss = model.get_loss()
-        if early_stopping(loss, model):
-            break
+        if epoch > 0:
+            # Stopping criteria
+            for l in range(model.n_layers):
+                if training_errors[l+1] < cf.error_ceil  and n_epochs_stable[l] <= cf.patience:
+                    if abs(old_training_errors[l+1] -  training_errors[l+1]) < cf.fun_tolerance*(1 + abs(old_training_errors[l+1])):
+                        n_epochs_stable[l] += 1
+                        if n_epochs_stable[l] > cf.patience:
+                            for param in model.layers[l].parameters():
+                                param.require_grad = False
 
-    early_stopping.best_model_state(model)
-    torch.save(model.state_dict(), f"{location}/pcmodule-{cf.N}.pt")
+        old_training_errors = training_errors          
+        epoch += 1
 
-    wandb.finish()    
+    wandb.finish()
+
+    # Save model parameters
+    torch.save(model.state_dict(), f"{location}/pc-{cf.N}.pt")
+
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Script that trains the PC model on a training set of size N"
+        description="Script that trains each layer of a PC model until convergence on a training set of size N."
     )
-    parser.add_argument("--n_epochs", required=True, type=int, help="Enter number of epochs")
-    parser.add_argument("--N", type=int, default=64, help="Enter training set size")
+    parser.add_argument("--N", type=int, default=10097, help="Enter training set size")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     args = parser.parse_args()
 
@@ -108,10 +108,9 @@ if __name__ == "__main__":
 
     # experiment params
     cf.seed = args.seed
-    cf.n_epochs = args.n_epochs
-    cf.factor = 0.1
-    cf.threshold = 1e-4
+    cf.fun_tolerance = 1e-3
     cf.patience = 10
+    cf.error_ceil = 1
 
     # dataset params
     cf.train_size = None

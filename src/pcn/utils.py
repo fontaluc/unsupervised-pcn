@@ -2,6 +2,7 @@ import random
 import json
 import numpy as np
 import torch
+import wandb
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -129,3 +130,39 @@ def recall_error(dataloader, model, n_iters=10000, step_tolerance=1e-5, fixed_pr
         )
         errors.append(torch.sum((img_batch - model.mus[model.n_layers])**2, axis = 1)) 
     return np.mean(errors)
+
+
+class EarlyStopping:
+    def __init__(self, patience: int = 10, threshold: float = 1e-4):
+        self.patience = patience
+        self.threshold = threshold
+        self.best = None
+        self.early_stop = False
+        self.counter = 0
+        self.best_model_state = None
+
+    def __call__(self, loss, model):
+        # convert `metrics` to float, in case it's a zero-dim Tensor
+        current = float(loss)
+
+        if self.best == None:
+            self.best = current
+            self.best_model_state = model.state_dict()
+
+        elif self.is_better(current, self.best):
+            self.best = current
+            self.best_model_state = model.state_dict()
+            self.num_bad_epochs = 0
+        
+        else:
+            self.num_bad_epochs += 1
+            if self.num_bad_epochs > self.patience:
+                self.early_stop = True
+                self.num_bad_epochs = 0     
+
+    def is_better(self, a, best):
+        rel_epsilon = 1.0 - self.threshold
+        return a < best * rel_epsilon
+
+    def load_best_model(self, model):
+        model.load_state_dict(self.best_model_state)
