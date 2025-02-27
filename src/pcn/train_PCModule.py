@@ -56,8 +56,8 @@ def main(cf):
 
     # Logging
     wandb.login()
-    run = wandb.init(project="unsupervised-pcn", config=cf)
-    run.watch(model, log='all') # log gradients and parameter values
+    wandb.init(project="unsupervised-pcn", config=cf)
+    wandb.watch(model, log='all') # log gradients and parameter values
     location = wandb.run.dir
 
     # Create models folder if it doesn't exist
