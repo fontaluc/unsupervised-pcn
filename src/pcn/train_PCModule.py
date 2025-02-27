@@ -32,9 +32,7 @@ def main(cf):
         generator=g
     )
 
-    model = PCModule(
-        nodes=cf.nodes, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
-    )
+    model = PCModule(cf.nodes, cf.mu_dt, cf.act_fn, cf.use_bias, cf.kaiming_init)
     
     optimizers = [
         optim.get_optim(
