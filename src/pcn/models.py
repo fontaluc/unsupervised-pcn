@@ -1,5 +1,5 @@
 from pcn import utils
-from pcn.layers import FCLayer, FCLayerModule, FCLayerModule_auto
+from pcn.layers import FCLayer
 import torch
 from torch import nn
 import numpy as np
