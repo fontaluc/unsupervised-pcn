@@ -81,6 +81,7 @@ def main(cf):
 
         for l in range(model.n_layers):
             schedulers[l].step(training_errors[l+1])
+            wandb.log({f'lr_{l}': optimizers[l].lr, 'epoch': epoch})
 
         plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
 
