@@ -452,7 +452,7 @@ class iPCModel(object):
         return self.layers
     
 class PCModule(nn.Module):
-    def __init__(self, nodes, act_fn, mu_dt, use_bias=False, kaiming_init=False):
+    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False):
         super().__init__()
         self.nodes = nodes
         self.mu_dt = mu_dt
