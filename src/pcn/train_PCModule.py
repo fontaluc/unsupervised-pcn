@@ -33,7 +33,7 @@ def main(cf):
     )
 
     model = PCModule(
-        nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
+        nodes=cf.nodes, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
     
     optimizers = [
