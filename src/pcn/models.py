@@ -474,12 +474,12 @@ class PCModule(nn.Module):
         self.layers = nn.ModuleList(layers)
 
     def reset(self):
-        self.preds = [[] for _ in range(self.model.n_nodes)]
-        self.errs = [[] for _ in range(self.model.n_nodes)]
-        self.mus = [[] for _ in range(self.model.n_nodes)]
+        self.preds = [[] for _ in range(self.n_nodes)]
+        self.errs = [[] for _ in range(self.n_nodes)]
+        self.mus = [[] for _ in range(self.n_nodes)]
 
     def reset_mus(self, batch_size, init_std):
-        for l in range(self.model.n_layers):
+        for l in range(self.n_layers):
             self.mus[l] = nn.Parameter(utils.set_tensor(
                 torch.empty(batch_size, self.layers[l].in_size).normal_(mean=0, std=init_std)
             ))
@@ -573,7 +573,7 @@ class PCTrainer(object):
         batch_size = train_loader.batch_size
         for batch_id, (img_batch, label_batch) in enumerate(train_loader):   
             img_batch = utils.set_tensor(img_batch)
-            self.model(img_batch, n_train_iters)
+            self.model(img_batch, n_train_iters, fixed_preds=fixed_preds_train)
             self.model.update_grads()
 
             for optim in self.optimizers:
@@ -619,7 +619,7 @@ class PCModule_auto(nn.Module):
         for l in range(self.n_layers):
             _act_fn = utils.Linear() if (l == self.n_layers - 1) else act_fn
 
-            layer = FCLayerModule(
+            layer = FCLayer(
                 in_size=nodes[l],
                 out_size=nodes[l + 1],
                 act_fn=_act_fn,
