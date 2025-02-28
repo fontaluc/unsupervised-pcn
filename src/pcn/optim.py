@@ -160,9 +160,12 @@ class ReduceLROnPlateau(LRScheduler):
         self.factor = factor
         self.threshold = threshold
         self.best = None
+        self._reset()
+    
+    def _reset(self):
+        self.num_bad_epochs = 0
     
     def step(self, metrics):
-        """Perform a step."""
         # convert `metrics` to float, in case it's a zero-dim Tensor
         current = float(metrics)
 
