@@ -65,7 +65,7 @@ def main(cf):
     for epoch in range(cf.n_epochs):
 
         training_errors = trainer.train(
-            train_loader, cf.n_train_iters, cf.fixed_preds_train
+            train_loader, epoch, cf.n_train_iters, cf.fixed_preds_train
         )
         for n in range(model.n_nodes):
             wandb.log({f'errors_{n}_train': training_errors[n], 'epoch': epoch})

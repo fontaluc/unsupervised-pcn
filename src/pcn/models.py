@@ -567,17 +567,22 @@ class PCTrainer(object):
         self.model = model
         self.optimizers = optimizers
     
-    def train(self, train_loader, n_train_iters, fixed_preds_train):
+    def train(self, train_loader, epoch, n_train_iters, fixed_preds_train):
         self.activations = [[] for n in range(self.model.n_nodes)]
         training_epoch_errors = [[] for _ in range(self.model.n_nodes)]
-        batch_size = train_loader.batch_size
+        n_batches = len(train_loader)
         for batch_id, (img_batch, label_batch) in enumerate(train_loader):   
             img_batch = utils.set_tensor(img_batch)
             self.model(img_batch, n_train_iters, fixed_preds=fixed_preds_train)
             self.model.update_grads()
 
-            for optim in self.optimizers:
-                optim.step()
+            for optimizer in self.optimizers:
+                optimizer.step(
+                    curr_epoch=epoch,
+                    curr_batch=batch_id,
+                    n_batches=n_batches,
+                    batch_size=img_batch.size(0),
+                )
             errors = self.model.get_errors()
             
             # gather data for the current batch
@@ -585,9 +590,9 @@ class PCTrainer(object):
                 training_epoch_errors[n] += [errors[:, n].mean().item()]
             
             # log layer activations (except input)
-            step = batch_id*batch_size
+            t = epoch * n_batches + batch_id
             for n in range(self.model.n_nodes - 1):
-                wandb.log({f'latents_{n}_train': wandb.Histogram(self.model.mus[n])}, step=step)
+                wandb.log({f'latents_{n}_train': wandb.Histogram(self.model.mus[n])}, step=t)
 
         # gather data for the full epoch
         training_errors = []
