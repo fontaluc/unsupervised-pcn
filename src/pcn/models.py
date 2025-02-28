@@ -592,7 +592,7 @@ class PCTrainer(object):
             # log layer activations (except input)
             t = epoch * n_batches + batch_id
             for n in range(self.model.n_nodes - 1):
-                wandb.log({f'latents_{n}_train': wandb.Histogram(self.model.mus[n])}, step=t)
+                wandb.log({f'latents_{n}_train': wandb.Histogram(self.model.mus[n].cpu())}, step=t)
 
         # gather data for the full epoch
         training_errors = []
