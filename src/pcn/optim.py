@@ -155,9 +155,10 @@ class ReduceLROnPlateau(LRScheduler):
     Adapted from Pytorch.
     """
 
-    def __init__(self, optimizer: Optimizer, factor: float = 0.1, threshold: float = 1e-4):
+    def __init__(self, optimizer: Optimizer, factor: float = 0.1, patience: int = 10, threshold: float = 1e-4):
         self.optimizer = optimizer
         self.factor = factor
+        self.patience = patience
         self.threshold = threshold
         self.best = None
         self._reset()
