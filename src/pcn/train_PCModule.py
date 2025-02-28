@@ -46,7 +46,7 @@ def main(cf):
         for l in range(model.n_layers)
     ]
 
-    schedulers = [optim.ReduceLROnPlateau(optimizers[l], cf.factor, cf.threshold) for l in range(model.n_layers)]
+    schedulers = [optim.ReduceLROnPlateau(optimizers[l], cf.factor, cf.patience, cf.threshold) for l in range(model.n_layers)]
 
     trainer = PCTrainer(model, optimizers)
 

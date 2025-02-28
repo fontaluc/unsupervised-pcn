@@ -138,7 +138,7 @@ class EarlyStopping:
         self.threshold = threshold
         self.best = None
         self.early_stop = False
-        self.counter = 0
+        self.num_bad_epochs = 0
         self.best_model_state = None
 
     def __call__(self, loss, model):
