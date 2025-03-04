@@ -567,7 +567,7 @@ class PCTrainer(object):
         self.model = model
         self.optimizers = optimizers
     
-    def train(self, train_loader, epoch, n_train_iters, fixed_preds_train):
+    def train(self, train_loader, epoch, n_train_iters, fixed_preds_train, log_freq):
         self.activations = [[] for n in range(self.model.n_nodes)]
         training_epoch_errors = [[] for _ in range(self.model.n_nodes)]
         n_batches = len(train_loader)
@@ -591,8 +591,9 @@ class PCTrainer(object):
             
             # log layer activations (except input)
             t = epoch * n_batches + batch_id
-            for n in range(self.model.n_nodes - 1):
-                wandb.log({f'latents_{n}_train': wandb.Histogram(self.model.mus[n].cpu().detach())}, step=t)
+            if t%log_freq == 0:
+                for n in range(self.model.n_nodes - 1):
+                    wandb.log({f'latents_{n}_train': wandb.Histogram(self.model.mus[n].cpu().detach())}, step=t)
 
         # gather data for the full epoch
         training_errors = []

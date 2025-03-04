@@ -65,7 +65,7 @@ def main(cf):
     for epoch in range(cf.n_epochs):
 
         training_errors = trainer.train(
-            train_loader, epoch, cf.n_train_iters, cf.fixed_preds_train
+            train_loader, epoch, cf.n_train_iters, cf.fixed_preds_train, cf.log_freq
         )
         for n in range(model.n_nodes):
             wandb.log({f'errors_{n}_train': training_errors[n], 'epoch': epoch})
@@ -109,7 +109,8 @@ if __name__ == "__main__":
     cf.n_epochs = args.n_epochs
     cf.factor = 0.1
     cf.threshold = 1e-4
-    cf.patience = 10
+    cf.patience = 100
+    cf.log_freq = 1000 # steps
 
     # dataset params
     cf.train_size = None
