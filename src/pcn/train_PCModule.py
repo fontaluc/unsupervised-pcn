@@ -36,7 +36,7 @@ def main(cf):
     
     optimizers = [
         optim.get_optim(
-            model.layers[l].parameters(),
+            [model.layers[l]], # must be iterable
             cf.optim,
             cf.lr,
             batch_scale=cf.batch_scale,
