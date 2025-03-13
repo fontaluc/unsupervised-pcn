@@ -122,7 +122,7 @@ class LRScheduler:
         self.optimizer = optimizer
     
 class ReduceLROnPlateau(LRScheduler):
-    """Reduce learning rate when a metric has stopped improving.
+    """Reduce learning rate when a metric has stopped improving if it is sufficiently low.
 
     Models often benefit from reducing the learning rate by a factor
     of 2-10 once learning stagnates. This scheduler reads a metrics
@@ -155,26 +155,32 @@ class ReduceLROnPlateau(LRScheduler):
     Adapted from Pytorch.
     """
 
-    def __init__(self, optimizer: Optimizer, factor: float = 0.1, patience: int = 10, threshold: float = 1e-4):
+    def __init__(self, optimizer: Optimizer, factor: float = 0.1, patience: int = 10, threshold: float = 1e-4, low_threshold: float = 0.05):
         self.optimizer = optimizer
         self.factor = factor
         self.patience = patience
         self.threshold = threshold
         self.best = None
-        self.num_bad_epochs = 0        
-    
+        self.num_bad_epochs = 0   
+        self.max = None
+        self.low_threshold = low_threshold
+        
     def step(self, metrics):
         # convert `metrics` to float, in case it's a zero-dim Tensor
         current = float(metrics)
 
-        if self.best == None:
+        if (self.best == None) & (self.max == None):
             self.best = current
+            self.max = current
 
         elif self.is_better(current, self.best):
             self.best = current
             self.num_bad_epochs = 0
             
-        else:
+        elif current > self.max:
+            self.max = current
+
+        elif self.is_low(current, self.max):
             self.num_bad_epochs += 1
             if self.num_bad_epochs > self.patience:
                 self._reduce_lr()
@@ -186,3 +192,6 @@ class ReduceLROnPlateau(LRScheduler):
     def is_better(self, a, best):
         rel_epsilon = 1.0 - self.threshold
         return a < best * rel_epsilon
+    
+    def is_low(self, a, max):
+        return a < self.low_threshold*max

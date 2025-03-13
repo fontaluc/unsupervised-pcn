@@ -133,28 +133,34 @@ def recall_error(dataloader, model, n_iters=10000, step_tolerance=1e-5, fixed_pr
 
 
 class EarlyStopping:
-    def __init__(self, patience: int = 10, threshold: float = 1e-4):
+    def __init__(self, patience: int = 10, threshold: float = 1e-4, low_threshold: float = 0.05):
         self.patience = patience
         self.threshold = threshold
         self.best = None
         self.early_stop = False
         self.num_bad_epochs = 0
         self.best_model_state = None
+        self.max = None
+        self.low_threshold = low_threshold
 
     def __call__(self, loss, model):
         # convert `metrics` to float, in case it's a zero-dim Tensor
         current = float(loss)
 
-        if self.best == None:
+        if (self.best == None) & (self.max == None):
             self.best = current
             self.best_model_state = model.state_dict()
+            self.max = current
 
         elif self.is_better(current, self.best):
             self.best = current
             self.best_model_state = model.state_dict()
             self.num_bad_epochs = 0
+
+        elif current > self.max:
+            self.max = current
         
-        else:
+        elif self.is_low(current, self.max):
             self.num_bad_epochs += 1
             if self.num_bad_epochs > self.patience:
                 self.early_stop = True
@@ -166,3 +172,6 @@ class EarlyStopping:
 
     def load_best_model(self, model):
         model.load_state_dict(self.best_model_state)
+    
+    def is_low(self, a, max):
+        return a < self.low_threshold*max
