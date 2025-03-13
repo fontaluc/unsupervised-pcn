@@ -79,21 +79,23 @@ def main(cf):
             wandb.log({f'errors_{n}_valid': validation_errors[n], 'epoch': epoch})
 
         for l in range(model.n_layers):
-            metrics = training_errors[l+1]
-            better_ratio = 1 - metrics/schedulers[l].best
-            low_ratio = metrics/schedulers[l].max
-            wandb.log({f'better_ratio_{l}': better_ratio, 'epoch': epoch})
-            wandb.log({f'low_ratio_{l}': low_ratio, 'epoch': epoch})
+            if epoch > 0:
+                metrics = training_errors[l+1]
+                better_ratio = 1 - metrics/schedulers[l].best
+                low_ratio = metrics/schedulers[l].max
+                wandb.log({f'better_ratio_{l}': better_ratio, 'epoch': epoch})
+                wandb.log({f'low_ratio_{l}': low_ratio, 'epoch': epoch})
             schedulers[l].step(metrics)
             wandb.log({f'lr_{l}': optimizers[l].lr, 'epoch': epoch})
 
         plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
 
         loss = model.get_loss()
-        better_ratio = 1 - loss/early_stopping.best
-        low_ratio = loss/early_stopping.max
-        wandb.log({f'better_ratio': better_ratio, 'epoch': epoch})
-        wandb.log({f'low_ratio': low_ratio, 'epoch': epoch})
+        if epoch > 0:
+            better_ratio = 1 - loss/early_stopping.best
+            low_ratio = loss/early_stopping.max
+            wandb.log({f'better_ratio': better_ratio, 'epoch': epoch})
+            wandb.log({f'low_ratio': low_ratio, 'epoch': epoch})
         if early_stopping(loss, model):
             break
 
