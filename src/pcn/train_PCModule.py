@@ -79,8 +79,8 @@ def main(cf):
             wandb.log({f'errors_{n}_valid': validation_errors[n], 'epoch': epoch})
 
         for l in range(model.n_layers):
-            if epoch > 0:
-                metrics = training_errors[l+1]
+            metrics = training_errors[l+1]
+            if epoch > 0:                
                 better_ratio = 1 - metrics/schedulers[l].best
                 low_ratio = metrics/schedulers[l].max
                 wandb.log({f'better_ratio_{l}': better_ratio, 'epoch': epoch})
