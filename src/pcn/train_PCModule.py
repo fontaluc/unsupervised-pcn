@@ -1,4 +1,4 @@
-from pcn.models import PCModuleBis, PCTrainer
+from pcn.models import PCModule, PCTrainer
 import wandb
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -32,7 +32,7 @@ def main(cf):
         generator=g
     )
 
-    model = PCModuleBis(cf.nodes, cf.mu_dt, cf.act_fn, cf.use_bias, cf.kaiming_init)
+    model = PCModule(cf.nodes, cf.mu_dt, cf.act_fn, cf.use_bias, cf.kaiming_init)
     
     optimizers = [
         optim.get_optim(
@@ -72,11 +72,22 @@ def main(cf):
         for n in range(model.n_nodes):
             wandb.log({f'errors_{n}_train': training_errors[n], 'epoch': epoch})
 
+        train_loss = model.get_loss()
+        wandb.log({'loss_train': train_loss, 'epoch': epoch})
+        if epoch > 0:
+            better_ratio = 1 - train_loss/early_stopping.best
+            low_ratio = train_loss/early_stopping.max
+            wandb.log({f'better_ratio': better_ratio, 'epoch': epoch})
+            wandb.log({f'low_ratio': low_ratio, 'epoch': epoch})
+
         img_batch, label_batch, validation_errors = trainer.eval(
             valid_loader, cf.n_test_iters, cf.fixed_preds_test
         )
         for n in range(model.n_nodes):
             wandb.log({f'errors_{n}_valid': validation_errors[n], 'epoch': epoch})
+
+        valid_loss = model.get_loss()
+        wandb.log({'loss_valid': valid_loss, 'epoch': epoch})
 
         for l in range(model.n_layers):
             metrics = training_errors[l+1]
@@ -89,15 +100,8 @@ def main(cf):
             wandb.log({f'lr_{l}': optimizers[l].lr, 'epoch': epoch})
 
         plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
-
-        loss = model.get_loss()
-        wandb.log({'loss': loss, 'epoch': epoch})
-        if epoch > 0:
-            better_ratio = 1 - loss/early_stopping.best
-            low_ratio = loss/early_stopping.max
-            wandb.log({f'better_ratio': better_ratio, 'epoch': epoch})
-            wandb.log({f'low_ratio': low_ratio, 'epoch': epoch})
-        if early_stopping(loss, model):
+        
+        if early_stopping(train_loss, model):
             break
 
     early_stopping.best_model_state(model)
