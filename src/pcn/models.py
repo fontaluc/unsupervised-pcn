@@ -561,6 +561,117 @@ class PCModule(nn.Module):
     def update_grads(self):
         for l in range(self.n_layers):
             self.layers[l].update_gradient(self.errs[l + 1])
+
+class PCModuleBis(nn.Module):
+    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False):
+        super().__init__()
+        self.nodes = nodes
+        self.mu_dt = mu_dt
+        self.n_nodes = len(nodes)
+        self.n_layers = len(nodes) - 1
+
+        layers = []
+        for l in range(self.n_layers):
+            _act_fn = utils.Linear() if (l == self.n_layers - 1) else act_fn
+
+            layer = FCLayer(
+                in_size=nodes[l],
+                out_size=nodes[l + 1],
+                act_fn=_act_fn,
+                use_bias=use_bias,
+                kaiming_init=kaiming_init,
+            )
+            layers.append(layer)
+        self.layers = nn.ModuleList(layers)
+
+    def reset(self):
+        self.preds = [[] for _ in range(self.n_nodes)]
+        self.errs = [[] for _ in range(self.n_nodes)]
+        self.mus = [[] for _ in range(self.n_nodes)]
+
+    def reset_mus(self, batch_size, init_std):
+        for l in range(self.n_layers):
+            self.mus[l] = nn.Parameter(utils.set_tensor(
+                torch.empty(batch_size, self.layers[l].in_size).normal_(mean=0, std=init_std)
+            ))
+
+    def set_target(self, target):
+        self.mus[-1] = target.clone()
+    
+    def set_input(self, inp):
+        self.mus[0] = inp.clone()
+
+    def get_errors(self):
+        batch_size = len(self.errs[0])
+        errors = torch.empty(batch_size, self.n_nodes)
+        for n in range(self.n_nodes):
+            errors[:, n]  = torch.sum(self.errs[n] ** 2)/self.nodes[n] 
+        return errors
+    
+    def get_loss(self):
+        # Average loss for a minibatch, normalized by the number of nodes per layer
+        errors = self.get_errors()
+        return errors.mean(axis=0).sum()
+
+    def forward(self, img_batch, n_iters, label_batch=None, init_std=0.05, fixed_preds=False):
+        batch_size = img_batch.size(0)
+        self.reset()
+        self.reset_mus(batch_size, init_std)
+        if label_batch is not None:
+            self.set_input(label_batch)
+        self.set_target(img_batch)
+        self.preds[0] = self.mus[0]
+        self.errs[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
+        for n in range(1, self.n_nodes):
+            self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
+            self.errs[n] = self.mus[n] - self.preds[n]
+
+        for itr in range(n_iters):
+            for l in range(self.n_layers): # mus[-1] is fixed to the image
+                delta = self.layers[l].backward(self.errs[l + 1]) - self.errs[l]
+                self.mus[l] = self.mus[l] + self.mu_dt * delta
+
+            for n in range(1, self.n_nodes):
+                if not fixed_preds:
+                    self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
+                self.errs[n] = self.mus[n] - self.preds[n]
+        return self.mus # forward function of a module has to return something   
+
+    def forward_test(self, img_batch, n_iters, step_tolerance=1e-5, init_std=0.05, fixed_preds=False):
+        batch_size = img_batch.size(0)
+        self.reset()
+        self.reset_mus(batch_size, init_std)
+        self.set_target(img_batch)
+        self.plot_batch_errors = [[[] for n in range(self.n_nodes)] for m in range(batch_size)]
+        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
+        self.errs[0] = self.mus[0] - self.preds[0]
+        for n in range(1, self.n_nodes):
+            self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
+            self.errs[n] = self.mus[n] - self.preds[n]
+        itr = 0
+        stop = False
+        relative_diff = torch.empty(self.n_layers, batch_size)
+        while not stop and itr <= n_iters:            
+            for l in range(self.n_layers): # mus[-1] is fixed to the image
+                delta = self.layers[l].backward(self.errs[l + 1]) - self.errs[l]
+                relative_diff[l] = delta.norm(dim=1)/self.mus[l].norm(dim=1)
+                self.mus[l] = self.mus[l] + self.mu_dt * delta                
+
+            for n in range(1, self.n_nodes):
+                if not fixed_preds:
+                    self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
+                self.errs[n] = self.mus[n] - self.preds[n]
+            
+            for n in range(self.n_nodes):
+                for m in range(batch_size):
+                    self.plot_batch_errors[m][n].append(self.get_errors()[m, n])
+
+            stop = (relative_diff < step_tolerance).sum().item()
+            itr += 1
+
+    def update_grads(self):
+        for l in range(self.n_layers):
+            self.layers[l].update_gradient(self.errs[l + 1])
     
 class PCTrainer(object):
     def __init__(self, model, optimizers):

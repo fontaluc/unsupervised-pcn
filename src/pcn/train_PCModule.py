@@ -1,4 +1,4 @@
-from pcn.models import PCModule, PCTrainer
+from pcn.models import PCModuleBis, PCTrainer
 import wandb
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -32,7 +32,7 @@ def main(cf):
         generator=g
     )
 
-    model = PCModule(cf.nodes, cf.mu_dt, cf.act_fn, cf.use_bias, cf.kaiming_init)
+    model = PCModuleBis(cf.nodes, cf.mu_dt, cf.act_fn, cf.use_bias, cf.kaiming_init)
     
     optimizers = [
         optim.get_optim(
@@ -91,6 +91,7 @@ def main(cf):
         plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
 
         loss = model.get_loss()
+        wandb.log({'loss': loss, 'epoch': epoch})
         if epoch > 0:
             better_ratio = 1 - loss/early_stopping.best
             low_ratio = loss/early_stopping.max
@@ -122,7 +123,7 @@ if __name__ == "__main__":
     cf.n_epochs = args.n_epochs
     cf.factor = 0.1
     cf.threshold = 1e-4
-    cf.low_threshold = 0.05
+    cf.low_threshold = 0.2
     cf.patience = 100
     cf.log_freq = 1000 # steps
 
