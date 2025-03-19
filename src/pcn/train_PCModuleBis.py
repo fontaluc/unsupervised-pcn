@@ -1,4 +1,4 @@
-from pcn.models import PCModule, PCTrainer
+from pcn.models import PCModuleBis, PCTrainer
 import wandb
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -32,7 +32,7 @@ def main(cf):
         generator=g
     )
 
-    model = PCModule(cf.nodes, cf.mu_dt, cf.act_fn, cf.use_bias, cf.kaiming_init)
+    model = PCModuleBis(cf.nodes, cf.mu_dt, cf.act_fn, cf.use_bias, cf.kaiming_init)
     
     optimizers = [
         optim.get_optim(
