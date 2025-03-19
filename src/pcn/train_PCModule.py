@@ -75,10 +75,19 @@ def main(cf):
         train_loss = model.get_loss()
         wandb.log({'loss_train': train_loss, 'epoch': epoch})
         if epoch > 0:
-            better_ratio = 1 - train_loss/early_stopping.best
-            low_ratio = train_loss/early_stopping.max
+            better_ratio, low_ratio = utils.compute_ratios(train_loss, early_stopping)
             wandb.log({f'better_ratio': better_ratio, 'epoch': epoch})
             wandb.log({f'low_ratio': low_ratio, 'epoch': epoch})
+
+        for l in range(model.n_layers):
+            metrics = training_errors[l+1]
+            if epoch > 0:                
+                better_ratio, low_ratio = utils.compute_ratios(metrics, schedulers[l])
+                wandb.log({f'better_ratio_{l}': better_ratio, 'epoch': epoch})
+                wandb.log({f'low_ratio_{l}': low_ratio, 'epoch': epoch})
+            schedulers[l].step(metrics)
+            wandb.log({f'scheduler_count_{l}': schedulers[l].num_bad_epochs, 'epoch': epoch})
+            wandb.log({f'lr_{l}': optimizers[l].lr, 'epoch': epoch})
 
         img_batch, label_batch, validation_errors = trainer.eval(
             valid_loader, cf.n_test_iters, cf.fixed_preds_test
@@ -89,22 +98,14 @@ def main(cf):
         valid_loss = model.get_loss()
         wandb.log({'loss_valid': valid_loss, 'epoch': epoch})
 
-        for l in range(model.n_layers):
-            metrics = training_errors[l+1]
-            if epoch > 0:                
-                better_ratio = 1 - metrics/schedulers[l].best
-                low_ratio = metrics/schedulers[l].max
-                wandb.log({f'better_ratio_{l}': better_ratio, 'epoch': epoch})
-                wandb.log({f'low_ratio_{l}': low_ratio, 'epoch': epoch})
-            schedulers[l].step(metrics)
-            wandb.log({f'lr_{l}': optimizers[l].lr, 'epoch': epoch})
-
         plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
         
         if early_stopping(train_loss, model):
             break
+        else:
+            wandb.log({f'early_stop_count': early_stopping.num_bad_epochs, 'epoch': epoch})
 
-    early_stopping.best_model_state(model)
+    early_stopping.load_best_model(model)
     torch.save(model.state_dict(), f"{location}/pcmodule-{cf.N}.pt")
 
     wandb.finish()    

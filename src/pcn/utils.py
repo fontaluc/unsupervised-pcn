@@ -2,7 +2,7 @@ import random
 import json
 import numpy as np
 import torch
-import wandb
+from pcn.optim import LRScheduler
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -133,7 +133,7 @@ def recall_error(dataloader, model, n_iters=10000, step_tolerance=1e-5, fixed_pr
 
 
 class EarlyStopping:
-    def __init__(self, patience: int = 10, threshold: float = 1e-4, low_threshold: float = 0.05):
+    def __init__(self, patience: int = 100, threshold: float = 1e-4, low_threshold: float = 0.2):
         self.patience = patience
         self.threshold = threshold
         self.best = None
@@ -160,11 +160,15 @@ class EarlyStopping:
         elif current > self.max:
             self.max = current
         
-        elif self.is_low(current, self.max):
+        elif self.is_low(current, self.max): # if metric does not improve and is low
             self.num_bad_epochs += 1
             if self.num_bad_epochs > self.patience:
                 self.early_stop = True
                 self.num_bad_epochs = 0     
+
+        else: # if metrics does not improve but is not low enough
+            self.num_bad_epochs = 0
+
 
     def is_better(self, a, best):
         rel_epsilon = 1.0 - self.threshold
@@ -175,3 +179,8 @@ class EarlyStopping:
     
     def is_low(self, a, max):
         return a < self.low_threshold*max
+    
+def compute_ratios(metrics: float, object: EarlyStopping | LRScheduler):
+    better_ratio = 1 - metrics/object.best
+    low_ratio = metrics/object.max
+    return better_ratio, low_ratio

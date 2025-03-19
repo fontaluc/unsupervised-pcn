@@ -90,9 +90,10 @@ class PCModel(object):
                 self.errs[n] = self.mus[n] - self.preds[n]
             self.errs[self.n_nodes - 1] = utils.set_tensor(torch.zeros(self.mus[self.n_nodes - 1].shape))   
 
+            errors = self.get_error_lengths()
             for n in range(self.n_nodes):
                 for m in range(batch_size):
-                    self.plot_batch_errors[m][n].append(self.get_errors()[m, n])      
+                    self.plot_batch_errors[m][n].append(errors[m, n])      
             
             if train:
                 self.update_grads()
@@ -146,9 +147,10 @@ class PCModel(object):
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
                 self.errs[n] = self.mus[n] - self.preds[n]
             
+            errors = self.get_error_lengths()
             for n in range(self.n_nodes):
                 for m in range(batch_size):
-                    self.plot_batch_errors[m][n].append(self.get_errors()[m, n].item())
+                    self.plot_batch_errors[m][n].append(errors[m, n])
 
             stop = (relative_diff < step_tolerance).sum().item()
             itr += 1
@@ -186,9 +188,10 @@ class PCModel(object):
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
                 self.errs[n] = self.mus[n] - self.preds[n]
             
-            for m in range(batch_size):
-                for n in range(self.n_nodes):
-                    self.plot_batch_errors[m][n].append(self.get_errors()[m, n].item())
+            errors = self.get_error_lengths()
+            for n in range(self.n_nodes):
+                for m in range(batch_size):
+                    self.plot_batch_errors[m][n].append(errors[m, n])
 
 
             stop = (relative_diff < step_tolerance).sum().item()
@@ -312,9 +315,10 @@ class iPCModel(object):
                 self.errs[n] = self.mus[n] - self.preds[n]
             self.errs[self.n_nodes - 1] = utils.set_tensor(torch.zeros(self.mus[self.n_nodes - 1].shape))   
 
+            errors = self.get_errors()
             for n in range(self.n_nodes):
                 for m in range(batch_size):
-                    self.plot_batch_errors[m][n].append(self.get_errors()[m, n])      
+                    self.plot_batch_errors[m][n].append(errors[m, n])    
             
             if train:
                 self.update_grads()
@@ -370,9 +374,10 @@ class iPCModel(object):
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
                 self.errs[n] = self.mus[n] - self.preds[n]
             
+            errors = self.get_errors()
             for n in range(self.n_nodes):
                 for m in range(batch_size):
-                    self.plot_batch_errors[m][n].append(self.get_errors()[m, n])
+                    self.plot_batch_errors[m][n].append(errors[m, n])
 
             stop = (relative_diff < step_tolerance).sum().item()
             itr += 1    
@@ -410,9 +415,10 @@ class iPCModel(object):
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
                 self.errs[n] = self.mus[n] - self.preds[n]
             
-            for m in range(batch_size):
-                for n in range(self.n_nodes):
-                    self.plot_batch_errors[m][n].append(self.get_errors()[m, n].item())
+            errors = self.get_errors()
+            for n in range(self.n_nodes):
+                for m in range(batch_size):
+                    self.plot_batch_errors[m][n].append(errors[m, n])
 
             stop = (relative_diff < step_tolerance).sum().item()
             itr += 1       
@@ -551,9 +557,10 @@ class PCModule(nn.Module):
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
                 self.errs[n] = self.mus[n] - self.preds[n]
             
+            errors = self.get_errors()
             for n in range(self.n_nodes):
                 for m in range(batch_size):
-                    self.plot_batch_errors[m][n].append(self.get_errors()[m, n])
+                    self.plot_batch_errors[m][n].append(errors[m, n])
 
             stop = (relative_diff < step_tolerance).sum().item()
             itr += 1
@@ -662,9 +669,10 @@ class PCModuleBis(nn.Module):
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
                 self.errs[n] = self.mus[n] - self.preds[n]
             
+            errors = self.get_errors()
             for n in range(self.n_nodes):
                 for m in range(batch_size):
-                    self.plot_batch_errors[m][n].append(self.get_errors()[m, n])
+                    self.plot_batch_errors[m][n].append(errors[m, n])
 
             stop = (relative_diff < step_tolerance).sum().item()
             itr += 1
@@ -723,6 +731,50 @@ class PCTrainer(object):
         img_batch, label_batch = next(iter(valid_loader))
         img_batch = utils.set_tensor(img_batch)
         self.model.forward_test(img_batch, n_test_iters, fixed_preds=fixed_preds_test)
+        errors = self.model.get_errors()
+        validation_errors = []
+        for n in range(self.model.n_nodes):
+            validation_errors.append(errors[:, n].mean().item())
+        return img_batch, label_batch, validation_errors
+    
+class PCTrainerLight(object):
+    def __init__(self, model, optimizers):
+        self.model = model
+        self.optimizers = optimizers
+    
+    def train(self, train_loader, epoch, n_train_iters, fixed_preds_train, log_freq):
+        self.activations = [[] for n in range(self.model.n_nodes)]
+        training_epoch_errors = [[] for _ in range(self.model.n_nodes)]
+        n_batches = len(train_loader)
+        for batch_id, (img_batch, label_batch) in enumerate(train_loader):   
+            img_batch = utils.set_tensor(img_batch)
+            self.model(img_batch, n_train_iters, fixed_preds=fixed_preds_train)
+            self.model.update_grads()
+
+            for optimizer in self.optimizers:
+                optimizer.step(
+                    curr_epoch=epoch,
+                    curr_batch=batch_id,
+                    n_batches=n_batches,
+                    batch_size=img_batch.size(0),
+                )
+            errors = self.model.get_errors()
+            
+            # gather data for the current batch
+            for n in range(self.model.n_nodes):
+                training_epoch_errors[n] += [errors[:, n].mean().item()]
+
+        # gather data for the full epoch
+        training_errors = []
+        for n in range(self.model.n_nodes):
+            error = np.mean(training_epoch_errors[n])
+            training_errors.append(error)
+        return training_errors 
+    
+    def eval(self, valid_loader, n_test_iters, fixed_preds_test):
+        img_batch, label_batch = next(iter(valid_loader))
+        img_batch = utils.set_tensor(img_batch)
+        self.model(img_batch, n_test_iters, fixed_preds=fixed_preds_test)
         errors = self.model.get_errors()
         validation_errors = []
         for n in range(self.model.n_nodes):
@@ -900,9 +952,10 @@ class PCTrainer_auto(object):
                     self.model.preds[n] = self.model.layers[n - 1].forward(self.model.mus[n - 1])
                 self.model.errs[n] = self.model.mus[n] - self.model.preds[n]
             
-            for n in range(self.model.n_nodes):
+            errors = self.get_errors()
+            for n in range(self.n_nodes):
                 for m in range(batch_size):
-                    self.plot_batch_errors[n][m].append(self.model.get_errors()[n, m])
+                    self.plot_batch_errors[m][n].append(errors[m, n])
 
             stop = (relative_diff < step_tolerance).sum().item()
             itr += 1        
