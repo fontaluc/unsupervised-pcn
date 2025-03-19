@@ -103,7 +103,8 @@ def main(cf):
 
         plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
         
-        if early_stopping(train_loss, model):
+        early_stopping(train_loss, model)
+        if early_stopping.early_stop:
             break
         else:
             wandb.log({f'early_stop_count': early_stopping.num_bad_epochs, 'epoch': epoch})
