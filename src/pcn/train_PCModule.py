@@ -129,7 +129,7 @@ if __name__ == "__main__":
     cf.factor = 0.1
     cf.threshold = 1e-4
     cf.low_threshold = 0.2
-    cf.patience = 100
+    cf.patience = 10
     cf.log_freq = 1000 # steps
 
     # dataset params
