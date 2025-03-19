@@ -616,9 +616,9 @@ class PCModuleBis(nn.Module):
         return errors
     
     def get_loss(self):
-        # Average loss for a minibatch, normalized by the number of nodes per layer, excluding the top layer
+        # Average loss for a minibatch, normalized by the number of nodes per layer
         errors = self.get_errors()
-        return errors[:, 1:].mean(axis=0).sum()
+        return errors.mean(axis=0).sum()
 
     def forward(self, img_batch, n_iters, label_batch=None, init_std=0.05, fixed_preds=False):
         batch_size = img_batch.size(0)

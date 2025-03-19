@@ -69,11 +69,13 @@ def main(cf):
         training_errors = trainer.train(
             train_loader, epoch, cf.n_train_iters, cf.fixed_preds_train, cf.log_freq
         )
+        train_loss = 0
         for n in range(model.n_nodes):
-            wandb.log({f'errors_{n}_train': training_errors[n], 'epoch': epoch})
-
-        train_loss = model.get_loss()
+            error = training_errors[n]
+            train_loss += error
+            wandb.log({f'errors_{n}_train': error, 'epoch': epoch})
         wandb.log({'loss_train': train_loss, 'epoch': epoch})
+        
         if epoch > 0:
             better_ratio, low_ratio = utils.compute_ratios(train_loss, early_stopping)
             wandb.log({f'better_ratio': better_ratio, 'epoch': epoch})
@@ -92,10 +94,11 @@ def main(cf):
         img_batch, label_batch, validation_errors = trainer.eval(
             valid_loader, cf.n_test_iters, cf.fixed_preds_test
         )
+        valid_loss = 0
         for n in range(model.n_nodes):
-            wandb.log({f'errors_{n}_valid': validation_errors[n], 'epoch': epoch})
-
-        valid_loss = model.get_loss()
+            error = validation_errors[n]
+            valid_loss += error
+            wandb.log({f'errors_{n}_valid': error, 'epoch': epoch})
         wandb.log({'loss_valid': valid_loss, 'epoch': epoch})
 
         plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
