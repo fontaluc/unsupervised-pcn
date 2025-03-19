@@ -729,7 +729,7 @@ class PCTrainer(object):
     def eval(self, valid_loader, n_test_iters, fixed_preds_test):
         img_batch, label_batch = next(iter(valid_loader))
         img_batch = utils.set_tensor(img_batch)
-        self.model.forward_test(img_batch, n_test_iters, fixed_preds=fixed_preds_test)
+        self.model(img_batch, n_test_iters, fixed_preds=fixed_preds_test)
         errors = self.model.get_errors()
         validation_errors = []
         for n in range(self.model.n_nodes):
