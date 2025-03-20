@@ -1,4 +1,6 @@
 import shutil
+
+from matplotlib import pyplot as plt
 from pcn.models import PCModule, PCTrainer
 import wandb
 import torch
@@ -70,17 +72,8 @@ def main(cf):
         training_errors = trainer.train(
             train_loader, epoch, cf.n_train_iters, cf.fixed_preds_train, cf.log_freq
         )
-        train_loss = 0
         for n in range(model.n_nodes):
-            error = training_errors[n]
-            train_loss += error
-            wandb.log({f'errors_{n}_train': error, 'epoch': epoch})
-        wandb.log({'loss_train': train_loss, 'epoch': epoch})
-        
-        if epoch > 0:
-            better_ratio, low_ratio = utils.compute_ratios(train_loss, early_stopping)
-            wandb.log({f'better_ratio': better_ratio, 'epoch': epoch})
-            wandb.log({f'low_ratio': low_ratio, 'epoch': epoch})
+            wandb.log({f'errors_{n}_train': training_errors[n], 'epoch': epoch})        
 
         for l in range(model.n_layers):
             metrics = training_errors[l+1]
@@ -95,32 +88,22 @@ def main(cf):
         img_batch, label_batch, validation_errors = trainer.eval(
             valid_loader, cf.n_test_iters, cf.fixed_preds_test
         )
-        valid_loss = 0
         for n in range(model.n_nodes):
-            error = validation_errors[n]
-            valid_loss += error
-            wandb.log({f'errors_{n}_valid': error, 'epoch': epoch})
-        wandb.log({'loss_valid': valid_loss, 'epoch': epoch})
+            wandb.log({f'errors_{n}_valid': validation_errors[n], 'epoch': epoch})
 
         plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
         
-        early_stopping(train_loss, model)
-        if early_stopping.early_stop:
+        if utils.early_stop(optimizers, cf.lr):
             break
-        else:
-            wandb.log({f'early_stop_count': early_stopping.num_bad_epochs, 'epoch': epoch})
 
     early_stopping.load_best_model(model)
-    torch.save(model.state_dict(), f"{location}/pcmodule-{cf.N}.pt")
+    torch.save(model.state_dict(), f"models/pcn-{cf.N}.pt")
 
     wandb.finish()
     
     # Remove local media directory
     path = os.path.join(location, 'media')
     shutil.rmtree(path)
-
-    # Evaluate recall performance
-    model.forward_test_time()
 
 if __name__ == "__main__":
 
@@ -163,9 +146,11 @@ if __name__ == "__main__":
     cf.mu_dt = 0.01
     cf.n_train_iters = 50
     cf.n_test_iters = 200
+    cf.n_max_iters = 10000
     cf.init_std = 0.01
     cf.fixed_preds_train = False
     cf.fixed_preds_test = False
+    cf.step_tolerance = 1-5
 
     # model params
     cf.use_bias = True

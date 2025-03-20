@@ -184,3 +184,16 @@ def compute_ratios(metrics: float, object: EarlyStopping | LRScheduler):
     better_ratio = 1 - metrics/object.best
     low_ratio = metrics/object.max
     return better_ratio, low_ratio
+
+def mask_image(img_batch, n_cut):
+    img_batch_half = img_batch.clone()
+    img_batch_half[:, n_cut:] = 0
+    return img_batch
+
+def rmse(img_batch, img_batch_recall):
+    n_features = img_batch.size(1)
+    return torch.sqrt(torch.sum((img_batch - img_batch_recall)**2, axis = 1))/n_features
+
+def early_stop(optimizers, lr):
+    L = len(optimizers)
+    return sum([optimizers[l].lr == lr for l in range(L)]) == L
