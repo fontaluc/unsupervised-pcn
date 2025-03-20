@@ -1,4 +1,5 @@
 import pickle
+import shutil
 from pcn.models import PCModel
 import wandb
 import torch
@@ -129,7 +130,11 @@ def main(cf):
 
     # Save model parameters
     with open(f"models/pc-{cf.N}-params.pkl", "wb") as f:
-        pickle.dump(model.params, f)             
+        pickle.dump(model.params, f)
+
+    # Remove local media directory
+    path = os.path.join(location, 'media')
+    shutil.rmtree(path)             
 
 if __name__ == "__main__":
 

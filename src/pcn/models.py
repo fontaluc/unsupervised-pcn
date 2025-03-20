@@ -502,18 +502,11 @@ class PCModule(nn.Module):
         for n in range(self.n_nodes):
             errors[:, n]  = torch.sum(self.errs[n] ** 2)/self.nodes[n] 
         return errors
-    
-    def get_loss(self):
-        # Average loss for a minibatch, normalized by the number of nodes per layer, excluding the top layer
-        errors = self.get_errors()
-        return errors[:, 1:].mean(axis=0).sum()
 
-    def forward(self, img_batch, n_iters, label_batch=None, init_std=0.05, fixed_preds=False):
+    def forward(self, img_batch, n_iters, init_std=0.05, fixed_preds=False):
         batch_size = img_batch.size(0)
         self.reset()
         self.reset_mus(batch_size, init_std)
-        if label_batch is not None:
-            self.set_input(label_batch)
         self.set_target(img_batch)
         self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
         self.errs[0] = self.mus[0] - self.preds[0]
@@ -530,27 +523,51 @@ class PCModule(nn.Module):
                 if not fixed_preds:
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
                 self.errs[n] = self.mus[n] - self.preds[n]
+
         return self.mus # forward function of a module has to return something   
 
-    def forward_test(self, img_batch, n_iters, step_tolerance=1e-5, init_std=0.05, fixed_preds=False):
+    def forward_test_time(
+            self, 
+            img_batch, 
+            n_iters, 
+            label_batch=None, 
+            n_cut=None, 
+            step_tolerance=1e-5, 
+            init_std=0.05, 
+            fixed_preds=False):
+        """
+        At test time, inference runs until convergence of all layers. 
+        This function can be used at test time for:
+        - Reconstructions
+        - Replay
+        - Recall
+        label_batch is used for replay and n_cut is used for recall. 
+        """
+        
         batch_size = img_batch.size(0)
         self.reset()
         self.reset_mus(batch_size, init_std)
         self.set_target(img_batch)
+        if label_batch is not None:
+            self.set_input(label_batch)
         self.plot_batch_errors = [[[] for n in range(self.n_nodes)] for m in range(batch_size)]
         self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
         self.errs[0] = self.mus[0] - self.preds[0]
         for n in range(1, self.n_nodes):
             self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
             self.errs[n] = self.mus[n] - self.preds[n]
-        itr = 0
-        stop = False
+        
         relative_diff = torch.empty(self.n_layers, batch_size)
-        while not stop and itr <= n_iters:            
+        for itr in range(n_iters):            
             for l in range(self.n_layers): # mus[-1] is fixed to the image
                 delta = self.layers[l].backward(self.errs[l + 1]) - self.errs[l]
                 relative_diff[l] = delta.norm(dim=1)/self.mus[l].norm(dim=1)
-                self.mus[l] = self.mus[l] + self.mu_dt * delta                
+                self.mus[l] = self.mus[l] + self.mu_dt * delta       
+
+            # Recall blank pixels
+            if n_cut is not None:
+                delta = - self.errs[self.n_layers]
+                self.mus[self.n_layers][:, n_cut:] = self.mus[self.n_layers][:, n_cut:] + self.mu_dt * delta[:, n_cut:]         
 
             for n in range(1, self.n_nodes):
                 if not fixed_preds:
@@ -562,8 +579,8 @@ class PCModule(nn.Module):
                 for m in range(batch_size):
                     self.plot_batch_errors[m][n].append(errors[m, n])
 
-            stop = (relative_diff < step_tolerance).sum().item()
-            itr += 1
+            if (relative_diff < step_tolerance).sum().item():
+                break
 
     def update_grads(self):
         for l in range(self.n_layers):
@@ -614,11 +631,6 @@ class PCModuleBis(nn.Module):
         for n in range(self.n_nodes):
             errors[:, n]  = torch.sum(self.errs[n] ** 2)/self.nodes[n] 
         return errors
-    
-    def get_loss(self):
-        # Average loss for a minibatch, normalized by the number of nodes per layer
-        errors = self.get_errors()
-        return errors.mean(axis=0).sum()
 
     def forward(self, img_batch, n_iters, label_batch=None, init_std=0.05, fixed_preds=False):
         batch_size = img_batch.size(0)
@@ -698,7 +710,7 @@ class PCTrainer(object):
             t = epoch * n_batches + batch_id
             if t%log_freq == 0:
                 for l in range(self.model.n_layers):
-                    wandb.log({f'grad_{l}': wandb.Histogram(self.model.layers[l].grad['weights'].cpu().detach())}, step=t)
+                    wandb.log({f'grad_{l}': wandb.Histogram(self.model.layers[l].grad['weights'].cpu().detach())})
 
             for optimizer in self.optimizers:
                 optimizer.step(
@@ -716,8 +728,8 @@ class PCTrainer(object):
             # log layer activations (except input) and weights            
             if t%log_freq == 0:
                 for n in range(self.model.n_nodes - 1):
-                    wandb.log({f'latents_{n}': wandb.Histogram(self.model.mus[n].cpu().detach())}, step=t)
-                    wandb.log({f'weights_{n}': wandb.Histogram(self.model.layers[n].weights.cpu().detach())}, step=t)
+                    wandb.log({f'latents_{n}': wandb.Histogram(self.model.mus[n].cpu().detach())})
+                    wandb.log({f'weights_{n}': wandb.Histogram(self.model.layers[n].weights.cpu().detach())})
 
         # gather data for the full epoch
         training_errors = []

@@ -1,3 +1,4 @@
+import shutil
 from pcn.models import PCModule, PCTrainer
 import wandb
 import torch
@@ -112,7 +113,14 @@ def main(cf):
     early_stopping.load_best_model(model)
     torch.save(model.state_dict(), f"{location}/pcmodule-{cf.N}.pt")
 
-    wandb.finish()    
+    wandb.finish()
+    
+    # Remove local media directory
+    path = os.path.join(location, 'media')
+    shutil.rmtree(path)
+
+    # Evaluate recall performance
+    model.forward_test_time()
 
 if __name__ == "__main__":
 
