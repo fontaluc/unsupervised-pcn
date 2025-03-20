@@ -1,5 +1,4 @@
 import shutil
-
 from matplotlib import pyplot as plt
 from pcn.models import PCModule, PCTrainer
 import wandb
@@ -56,8 +55,6 @@ def main(cf):
 
     trainer = PCTrainer(model, optimizers)
 
-    early_stopping = utils.EarlyStopping(cf.patience, cf.threshold, cf.low_threshold)
-
     # Logging
     wandb.login()
     wandb.init(project="unsupervised-pcn", config=cf)
@@ -96,7 +93,6 @@ def main(cf):
         if utils.early_stop(optimizers, cf.lr):
             break
 
-    early_stopping.load_best_model(model)
     torch.save(model.state_dict(), f"models/pcn-{cf.N}.pt")
 
     wandb.finish()
