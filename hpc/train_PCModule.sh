@@ -11,7 +11,7 @@
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #SBATCH --exclusive
 ### -- set walltime limit: j-h:m:s
-#SBATCH --time 20:0:0
+#SBATCH --time 1-0
 ### -- Specify the output and error file. %A_%a is the job-id --
 ### -- -o and -e mean append, -oo and -eo mean overwrite --
 #SBATCH -o /home/lfontain/unsupervised-pcn/outputs/logs/train_PCModule_%A_%a.out
