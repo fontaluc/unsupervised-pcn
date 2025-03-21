@@ -149,13 +149,21 @@ class ReduceLROnPlateau(LRScheduler):
             if the performance is worse than the baseline. If the performance improves or remains the same,
             the learning rate is not adjusted.
             Default: 10.
-        threshold (float): Threshold for measuring the new optimum,
-            to only focus on significant changes. Default: 1e-4.
+        threshold (float): Threshold for measuring the new optimum, to only focus on significant changes. Default: 1e-4.
+        min_lr (float): A lower bound on the learning rate. Default: 0.
 
     Adapted from Pytorch.
     """
 
-    def __init__(self, optimizer: Optimizer, factor: float = 0.1, patience: int = 10, threshold: float = 1e-4, low_threshold: float = 0.2):
+    def __init__(
+            self, 
+            optimizer: Optimizer,
+            factor: float = 0.1,
+            patience: int = 10,
+            threshold: float = 1e-4,
+            low_threshold: float = 0.2,
+            min_lr: float = 0
+    ):
         self.optimizer = optimizer
         self.factor = factor
         self.patience = patience
@@ -164,6 +172,7 @@ class ReduceLROnPlateau(LRScheduler):
         self.num_bad_epochs = 0   
         self.max = None
         self.low_threshold = low_threshold
+        self.min_lr = min_lr
         
     def step(self, metrics):
         # convert `metrics` to float, in case it's a zero-dim Tensor
@@ -190,7 +199,7 @@ class ReduceLROnPlateau(LRScheduler):
             self.num_bad_epochs = 0
 
     def _reduce_lr(self):
-        self.optimizer.lr = self.optimizer.lr * self.factor
+        self.optimizer.lr = max(self.optimizer.lr * self.factor, self.min_lr)
 
     def is_better(self, a, best):
         rel_epsilon = 1.0 - self.threshold

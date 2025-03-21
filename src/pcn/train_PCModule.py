@@ -49,7 +49,7 @@ def main(cf):
     ]
 
     schedulers = [
-        optim.ReduceLROnPlateau(optimizers[l], cf.factor, cf.patience, cf.threshold, cf.low_threshold) 
+        optim.ReduceLROnPlateau(optimizers[l], cf.factor, cf.patience, cf.threshold, cf.low_threshold, cf.min_lr) 
         for l in range(model.n_layers)
     ]
 
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # experiment params
     cf.seed = args.seed
     cf.n_epochs = args.n_epochs
-    cf.factor = 0.1
+    cf.factor = 0.5
     cf.threshold = 1e-4
     cf.low_threshold = 0.2
     cf.patience = 10
@@ -134,6 +134,7 @@ if __name__ == "__main__":
     # optim params
     cf.optim = "Adam"
     cf.lr = 1e-4
+    cf.min_lr = cf.factor*cf.lr
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None
