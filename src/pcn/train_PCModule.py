@@ -120,7 +120,7 @@ if __name__ == "__main__":
     cf.factor = 0.5
     cf.threshold = 1e-4
     cf.low_threshold = 0.2
-    cf.patience = 10
+    cf.patience = 100
     cf.log_freq = 1000 # steps
 
     # dataset params
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     # optim params
     cf.optim = "Adam"
     cf.lr = 1e-4
-    cf.min_lr = cf.factor*cf.lr
+    cf.min_lr = 1e-6
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None

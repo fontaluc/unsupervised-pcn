@@ -168,7 +168,7 @@ class ReduceLROnPlateau(LRScheduler):
         self.factor = factor
         self.patience = patience
         self.threshold = threshold
-        self.best = None
+        self.previous = None
         self.num_bad_epochs = 0   
         self.max = None
         self.low_threshold = low_threshold
@@ -178,12 +178,10 @@ class ReduceLROnPlateau(LRScheduler):
         # convert `metrics` to float, in case it's a zero-dim Tensor
         current = float(metrics)
 
-        if (self.best == None) & (self.max == None):
-            self.best = current
+        if self.max == None:
             self.max = current
 
-        elif self.is_better(current, self.best):
-            self.best = current
+        elif self.is_better(current, self.previous):
             self.num_bad_epochs = 0
             
         elif current > self.max:
@@ -197,6 +195,8 @@ class ReduceLROnPlateau(LRScheduler):
 
         else:
             self.num_bad_epochs = 0
+        
+        self.previous = current
 
     def _reduce_lr(self):
         self.optimizer.lr = max(self.optimizer.lr * self.factor, self.min_lr)
