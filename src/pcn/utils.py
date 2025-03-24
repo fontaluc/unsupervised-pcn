@@ -181,7 +181,7 @@ class EarlyStopping:
         return a < self.low_threshold*max
     
 def compute_ratios(metrics: float, object: EarlyStopping | LRScheduler):
-    better_ratio = 1 - metrics/object.best
+    better_ratio = 1 - metrics/object.previous
     low_ratio = metrics/object.max
     return better_ratio, low_ratio
 
