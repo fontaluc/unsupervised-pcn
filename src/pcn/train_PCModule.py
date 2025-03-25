@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # experiment params
     cf.seed = args.seed
     cf.n_epochs = args.n_epochs
-    cf.factor = 0.5
+    cf.factor = 0.9
     cf.threshold = 1e-4
     cf.low_threshold = 0.2
     cf.patience = 100
