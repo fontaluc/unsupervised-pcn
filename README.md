@@ -10,7 +10,7 @@ ssh username@plafrim
 ```
 * Load conda
 ```
-module load build/conda/4.10
+module load build/conda/4.1009
 ```
 * Create conda environment
 ```
@@ -70,3 +70,7 @@ where modulename is tools/git/2.36.0 for example. Apply changes with
 ```
 source ~/.bashrc
 ```
+
+## References
+* Formation SSH: https://www.math.u-bordeaux.fr/imb/cellule/Formations-SSH
+* Formation Moyens de calcul: https://www.math.u-bordeaux.fr/imb/cellule/Formations-Moyens-de-calcul
