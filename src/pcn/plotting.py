@@ -172,7 +172,7 @@ def make_pc_plots(model, x, y, training_errors, validation_errors, weights, colo
     except Exception as e:
         print(f"Warning: An unexpected error occurred while removing '{tmp_img}': {e}")
 
-def plot_levels(model, dataloader, cf):
+def plot_levels(model, dataloader, n_iters, step_tolerance, init_std, fixed_preds):
     activities = [[] for _ in range(model.n_nodes)]
     labels = []
     
@@ -181,7 +181,7 @@ def plot_levels(model, dataloader, cf):
         for x, y in dataloader:
             x = utils.set_tensor(x)
             model.test_batch(
-                x, cf.n_test_iters, fixed_preds=cf.fixed_preds_train
+                x, n_iters, step_tolerance, init_std, fixed_preds=fixed_preds
             )            
             for n in range(model.n_nodes):
                 activities[n] += model.mus[n].to('cpu').tolist()
@@ -193,3 +193,5 @@ def plot_levels(model, dataloader, cf):
         z = torch.Tensor(activities[n])
         y = torch.Tensor(labels)
         visualize_latent(axes[n], z, y)
+
+    return fig

@@ -1,6 +1,6 @@
 import pickle
 import shutil
-from pcn.models import PCModel
+from pcn.models import PCModel, PCTrainer
 import wandb
 import torch
 from torch.utils.data import DataLoader, TensorDataset
@@ -10,51 +10,6 @@ import os
 from pcn import utils
 from pcn import plotting
 import argparse
-
-def train(train_loader, model, optimizer, epoch, n_train_iters, fixed_preds_train):
-    training_epoch_errors = [[] for _ in range(model.n_nodes)]
-    training_epoch_latents = [[] for _ in range(model.n_nodes)]
-    for batch_id, (img_batch, label_batch) in enumerate(train_loader):
-        img_batch = utils.set_tensor(img_batch)
-        model.train_batch(
-            img_batch, n_train_iters, layers_in_progress=range(model.n_layers), fixed_preds=fixed_preds_train
-        )
-        errors = model.get_error_lengths()
-        latents = model.get_latent_lengths()
-        optimizer.step(
-            curr_epoch=epoch,
-            curr_batch=batch_id,
-            n_batches=len(train_loader),
-            batch_size=img_batch.size(0),
-        )
-
-        # gather data for the current batch
-        for n in range(model.n_nodes):
-            training_epoch_errors[n] += [errors[:, n].mean().item()]
-        for n in range(model.n_nodes - 1):
-            training_epoch_latents[n] += [latents[:, n].mean().item()]
-            
-    # gather data for the full epoch
-    for n in range(model.n_nodes):
-        error = np.mean(training_epoch_errors[n])
-        wandb.log({f'errors_{n}_train': error, 'epoch': epoch})
-    for n in range(model.n_nodes - 1):
-        latent = np.mean(training_epoch_latents[n])
-        wandb.log({f'latents_{n}_train': latent, 'epoch': epoch})        
-
-def eval(valid_loader, model, epoch, n_test_iters, fixed_preds_test):
-    # Validation on a single batch
-    img_batch, label_batch = next(iter(valid_loader))
-    img_batch = utils.set_tensor(img_batch)
-    model.test_batch(
-        img_batch, n_test_iters, fixed_preds=fixed_preds_test
-    )
-    errors = model.get_error_lengths()
-    for n in range(model.n_nodes):
-        error = errors[:, n].mean().item()
-        wandb.log({f'errors_{n}_valid': error, 'epoch': epoch})
-
-    return img_batch, label_batch
     
 def main(cf):
     wandb.login()
@@ -87,38 +42,32 @@ def main(cf):
     model = PCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
+    
     optimizer = optim.get_optim(
-        model.params,
+        model.layers,
         cf.optim,
         cf.lr,
         batch_scale=cf.batch_scale,
         grad_clip=cf.grad_clip,
         weight_decay=cf.weight_decay,
-    )  
+    ) 
+
+    trainer = PCTrainer(model, optimizer)
 
     with torch.no_grad():
         for epoch in range(cf.n_epochs):
-            # Training
-            train( 
-                train_loader, 
-                model, 
-                optimizer, 
-                epoch, 
-                cf.n_train_iters, 
-                cf.fixed_preds_train)
 
-            for l in range(model.n_layers):
-                weights = model.get_weight_lengths()[l]
-                wandb.log({f'weights_{l}': weights, 'epoch': epoch})
-
-            # Validation
-            img_batch, label_batch = eval( 
-                valid_loader, 
-                model, 
-                epoch,
-                cf.n_test_iters, 
-                cf.fixed_preds_test
+            training_errors = trainer.train(
+                train_loader, epoch, cf.n_train_iters, cf.fixed_preds_train, cf.log_freq
             )
+            for n in range(model.n_nodes):
+                wandb.log({f'errors_{n}_train': training_errors[n], 'epoch': epoch})        
+
+            img_batch, label_batch, validation_errors = trainer.eval(
+                valid_loader, cf.n_test_iters, cf.fixed_preds_test
+            )
+            for n in range(model.n_nodes):
+                wandb.log({f'errors_{n}_valid': validation_errors[n], 'epoch': epoch})
 
             plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
 
@@ -129,8 +78,8 @@ def main(cf):
         os.makedirs("models")
 
     # Save model parameters
-    with open(f"models/pc-{cf.N}-params.pkl", "wb") as f:
-        pickle.dump(model.params, f)
+    with open(f"models/pcn-{cf.N}.pkl", "wb") as f:
+        pickle.dump(model.layers, f)
 
     # Remove local media directory
     path = os.path.join(location, 'media')
@@ -144,7 +93,6 @@ if __name__ == "__main__":
     parser.add_argument("--n_epochs", required=True, type=int, help="Enter number of epochs")
     parser.add_argument("--N", type=int, default=64, help="Enter training set size")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
-    parser.add_argument("--lr", type=int, default=1e-4, help="Enter learning rate")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -164,7 +112,7 @@ if __name__ == "__main__":
 
     # optim params
     cf.optim = "Adam"
-    cf.lr = args.lr
+    cf.lr = 1e-4
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None
