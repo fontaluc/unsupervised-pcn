@@ -101,6 +101,7 @@ if __name__ == "__main__":
     # experiment params
     cf.seed = args.seed
     cf.n_epochs = args.n_epochs
+    cf.log_freq = 1000 # steps
 
     # dataset params
     cf.train_size = None
