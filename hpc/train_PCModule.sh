@@ -27,6 +27,6 @@ conda activate torch_env
 
 N=(64 10097)
 n=${N[$SLURM_ARRAY_TASK_ID - 1]}
-N_epochs=(20000 1000)
+N_epochs=(14000 400)
 n_epochs=${N_epochs[$SLURM_ARRAY_TASK_ID - 1]}
 srun python $HOME/unsupervised-pcn/src/pcn/train_PCModule.py --n_epochs=$n_epochs --N=$n

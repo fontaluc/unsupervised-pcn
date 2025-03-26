@@ -693,6 +693,61 @@ class PCModuleBis(nn.Module):
             self.layers[l].update_gradient(self.errs[l + 1])
     
 class PCTrainer(object):
+    def __init__(self, model, optimizer):
+        self.model = model
+        self.optimizer = optimizer
+    
+    def train(self, train_loader, epoch, n_train_iters, fixed_preds_train, log_freq):
+        self.activations = [[] for n in range(self.model.n_nodes)]
+        training_epoch_errors = [[] for _ in range(self.model.n_nodes)]
+        n_batches = len(train_loader)
+        for batch_id, (img_batch, label_batch) in enumerate(train_loader):   
+            img_batch = utils.set_tensor(img_batch)
+            self.model(img_batch, n_train_iters, fixed_preds=fixed_preds_train)
+            self.model.update_grads()
+
+            # log gradients
+            t = epoch * n_batches + batch_id
+            if t%log_freq == 0:
+                for l in range(self.model.n_layers):
+                    wandb.log({f'grad_{l}': wandb.Histogram(self.model.layers[l].grad['weights'].cpu().detach())})
+
+            self.optimizer.step(
+                curr_epoch=epoch,
+                curr_batch=batch_id,
+                n_batches=n_batches,
+                batch_size=img_batch.size(0),
+            )
+            errors = self.model.get_errors()
+            
+            # gather data for the current batch
+            for n in range(self.model.n_nodes):
+                training_epoch_errors[n] += [errors[:, n].mean().item()]
+            
+            # log layer activations (except input) and weights            
+            if t%log_freq == 0:
+                for n in range(self.model.n_nodes - 1):
+                    wandb.log({f'latents_{n}': wandb.Histogram(self.model.mus[n].cpu().detach())})
+                    wandb.log({f'weights_{n}': wandb.Histogram(self.model.layers[n].weights.cpu().detach())})
+
+        # gather data for the full epoch
+        training_errors = []
+        for n in range(self.model.n_nodes):
+            error = np.mean(training_epoch_errors[n])
+            training_errors.append(error)
+        return training_errors 
+    
+    def eval(self, valid_loader, n_test_iters, fixed_preds_test):
+        img_batch, label_batch = next(iter(valid_loader))
+        img_batch = utils.set_tensor(img_batch)
+        self.model(img_batch, n_test_iters, fixed_preds=fixed_preds_test)
+        errors = self.model.get_errors()
+        validation_errors = []
+        for n in range(self.model.n_nodes):
+            validation_errors.append(errors[:, n].mean().item())
+        return img_batch, label_batch, validation_errors 
+
+class PCTrainerScheduled(object):
     def __init__(self, model, optimizers):
         self.model = model
         self.optimizers = optimizers
@@ -746,7 +801,7 @@ class PCTrainer(object):
         validation_errors = []
         for n in range(self.model.n_nodes):
             validation_errors.append(errors[:, n].mean().item())
-        return img_batch, label_batch, validation_errors    
+        return img_batch, label_batch, validation_errors     
     
 class PCModule_auto(nn.Module):
     def __init__(self, nodes, act_fn, use_bias=False, kaiming_init=False):

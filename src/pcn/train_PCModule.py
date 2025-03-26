@@ -36,24 +36,16 @@ def main(cf):
 
     model = PCModule(cf.nodes, cf.mu_dt, cf.act_fn, cf.use_bias, cf.kaiming_init)
     
-    optimizers = [
-        optim.get_optim(
-            [model.layers[l]], # must be iterable
+    optimizer = optim.get_optim(
+            model.layers, 
             cf.optim,
-            cf.lr[l],
+            cf.lr,
             batch_scale=cf.batch_scale,
             grad_clip=cf.grad_clip,
             weight_decay=cf.weight_decay,
         )  
-        for l in range(model.n_layers)
-    ]
 
-    schedulers = [
-        optim.ReduceLROnPlateau(optimizers[l], cf.factor, cf.patience, cf.threshold, cf.low_threshold, cf.min_lr) 
-        for l in range(model.n_layers)
-    ]
-
-    trainer = PCTrainer(model, optimizers)
+    trainer = PCTrainer(model, optimizer)
 
     # Logging
     wandb.login()
@@ -72,16 +64,6 @@ def main(cf):
         for n in range(model.n_nodes):
             wandb.log({f'errors_{n}_train': training_errors[n], 'epoch': epoch})        
 
-        for l in range(model.n_layers):
-            metrics = training_errors[l+1]
-            if epoch > 0:                
-                better_ratio, low_ratio = utils.compute_ratios(metrics, schedulers[l])
-                wandb.log({f'better_ratio_{l}': better_ratio, 'epoch': epoch})
-                wandb.log({f'low_ratio_{l}': low_ratio, 'epoch': epoch})
-            schedulers[l].step(metrics)
-            wandb.log({f'scheduler_count_{l}': schedulers[l].num_bad_epochs, 'epoch': epoch})
-            wandb.log({f'lr_{l}': optimizers[l].lr, 'epoch': epoch})
-
         img_batch, label_batch, validation_errors = trainer.eval(
             valid_loader, cf.n_test_iters, cf.fixed_preds_test
         )
@@ -89,9 +71,6 @@ def main(cf):
             wandb.log({f'errors_{n}_valid': validation_errors[n], 'epoch': epoch})
 
         plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
-        
-        if utils.early_stop(optimizers, cf.lr):
-            break
 
     torch.save(model.state_dict(), f"models/pcn-{cf.N}.pt")
 
@@ -117,10 +96,6 @@ if __name__ == "__main__":
     # experiment params
     cf.seed = args.seed
     cf.n_epochs = args.n_epochs
-    cf.factor = 0.5
-    cf.threshold = 1e-4
-    cf.low_threshold = 0.2
-    cf.patience = 100
     cf.log_freq = 1000 # steps
 
     # dataset params
@@ -133,8 +108,7 @@ if __name__ == "__main__":
 
     # optim params
     cf.optim = "Adam"
-    cf.lr = [3e-4, 1e-4]
-    cf.min_lr = 1e-6
+    cf.lr = 1e-4
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None
