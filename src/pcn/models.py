@@ -49,7 +49,7 @@ class PCModel(object):
         self.reset_mus(batch_size, init_std)
         self.set_target(img_batch)
         self.updates(n_iters, fixed_preds=fixed_preds)
-        self.update_grads(layers_in_progress)
+        self.update_grads()
     
     def eval_batch(self, img_batch, n_iters, init_std=0.05, fixed_preds=False):
         batch_size = img_batch.size(0)
