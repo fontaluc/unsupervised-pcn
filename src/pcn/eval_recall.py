@@ -39,7 +39,7 @@ def main(cf):
     n_cut = img_batch.size(2)/2
     img_batch_half = utils.mask_image(img_batch, n_cut)
     img_batch_half = utils.set_tensor(img_batch_half)
-    model.forward_test_time(
+    model.recall_batch(
         img_batch_half, 
         cf.n_max_iters, 
         n_cut=n_cut, 
@@ -69,7 +69,7 @@ def main(cf):
     for img_batch, label_batch in tqdm(train_loader):
         img_batch_half = utils.mask_image(img_batch, cf.n_cut)
         img_batch_half = utils.set_tensor(img_batch_half)
-        model.forward_test_time(
+        model.recall_batch(
             img_batch_half, 
             cf.n_max_iters, 
             n_cut=n_cut, 
