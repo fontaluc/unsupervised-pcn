@@ -43,7 +43,7 @@ class PCModel(object):
     def set_input(self, inp):
         self.mus[0] = inp.clone()
 
-    def train_batch(self, img_batch, n_iters, layers_in_progress, init_std=0.05, fixed_preds=False):
+    def train_batch(self, img_batch, n_iters, init_std=0.05, fixed_preds=False):
         batch_size = img_batch.size(0)
         self.reset()
         self.reset_mus(batch_size, init_std)
