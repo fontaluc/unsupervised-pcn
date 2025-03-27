@@ -188,7 +188,7 @@ def compute_ratios(metrics: float, object: EarlyStopping | LRScheduler):
 def mask_image(img_batch, n_cut):
     img_batch_half = img_batch.clone()
     img_batch_half[:, n_cut:] = 0
-    return img_batch
+    return img_batch_half
 
 def rmse(img_batch, img_batch_recall):
     n_features = img_batch.size(1)

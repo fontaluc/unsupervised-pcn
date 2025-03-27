@@ -5,7 +5,7 @@ from torch import nn
 import numpy as np
 import wandb
 
-class PCModel(object):
+class PCModel(nn.Module):
     def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False):
         self.nodes = nodes
         self.mu_dt = mu_dt
@@ -25,6 +25,7 @@ class PCModel(object):
                 kaiming_init=kaiming_init,
             )
             self.layers.append(layer)
+        self.layers = nn.ModuleList(self.layers)
 
     def reset(self):
         self.preds = [[] for _ in range(self.n_nodes)]
@@ -104,7 +105,7 @@ class PCModel(object):
         for n in range(1, self.n_nodes - 1):
             self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
             self.errs[n] = self.mus[n] - self.preds[n]        
-        self.errs[self.n_nodes - 1] = utils.set_tensor(torch.zeros(self.mus[self.n_nodes - 1].shape))        
+        self.errs[-1] = utils.set_tensor(torch.zeros(batch_size, self.layers[-1].out_size))        
         relative_diff = torch.empty(self.n_layers - 1, batch_size)
         for itr in range(n_iters): 
             for l in range(1, self.n_layers): # mus[-1] and mus[0] are fixed
@@ -171,10 +172,9 @@ class PCModel(object):
                 delta = self.layers[l].backward(self.errs[l + 1]) - self.errs[l]
                 relative_diff[l] = delta.norm(dim=1)/self.mus[l].norm(dim=1)
                 self.mus[l] = self.mus[l] + self.mu_dt * delta       
-
             # Recall pixels
-            delta = - self.errs[self.n_layers]
-            self.mus[self.n_layers][:, n_cut:] = self.mus[self.n_layers][:, n_cut:] + self.mu_dt * delta[:, n_cut:]
+            delta = - self.errs[-1]
+            self.mus[-1][:, n_cut:] = self.mus[-1][:, n_cut:] + self.mu_dt * delta[:, n_cut:]
 
             for n in range(1, self.n_nodes):
                 if not fixed_preds:

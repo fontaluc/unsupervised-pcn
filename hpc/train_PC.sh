@@ -1,11 +1,11 @@
 #!/bin/sh
 ### General options
 ### –- specify queue --
-#SBATCH -C a100
+#SBATCH -C sirocco
 ### -- set the job Name --
 #SBATCH -J train_PC
 ### -- set the job array --
-#SBATCH --array=1-2
+#SBATCH --array=1-7
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
@@ -25,8 +25,8 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-N=(64 10097)
+N=(1280 2560 3840 5120 6400 7680) 
 n=${N[$SLURM_ARRAY_TASK_ID - 1]}
-N_epochs=(14000 400)
+N_epochs=(12352 10617 8882 7147 5412 3677)
 n_epochs=${N_epochs[$SLURM_ARRAY_TASK_ID - 1]}
 srun python $HOME/unsupervised-pcn/src/pcn/train_PC.py --n_epochs=$n_epochs --N=$n

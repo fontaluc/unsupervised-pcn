@@ -4,8 +4,8 @@ from pcn import utils, plotting
 import torch
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, TensorDataset
-import pickle
 from pcn.models import PCModel
+import os
 
 def main(cf):
 
@@ -23,18 +23,20 @@ def main(cf):
         generator=g
     )
 
-
-    layers = torch.load(f"models/pcn-{cf.N}.pkl", map_location=torch.device('cpu'), weights_only=False)
     model = PCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
-    model.layers = layers
+    model.load_state_dict(torch.load(f"models/pcn-{cf.N}.pt", map_location=torch.device('cpu'), weights_only=True))
+
+    # Create folder if it doesn't exist
+    if not os.path.exists(f"outputs/pcn-{cf.N}"):
+        os.makedirs(f"outputs/pcn-{cf.N}")
 
     # Qualitatively on ten images
     test_size = 10
     img_batch, label_batch = next(iter(train_loader))
     img_batch = img_batch[:test_size]
-    n_cut = img_batch.size(2)/2
+    n_cut = img_batch.size(1)//2
     img_batch_half = utils.mask_image(img_batch, n_cut)
     img_batch_half = utils.set_tensor(img_batch_half)
     model.recall_batch(
@@ -107,6 +109,8 @@ if __name__ == "__main__":
     cf.mu_dt = 0.01
     cf.n_train_iters = 50
     cf.n_test_iters = 200
+    cf.n_max_iters = 10000
+    cf.step_tolerance = 1e-5
     cf.init_std = 0.01
     cf.fixed_preds_train = False
     cf.fixed_preds_test = False

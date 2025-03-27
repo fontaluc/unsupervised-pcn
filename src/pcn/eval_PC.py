@@ -22,7 +22,10 @@ def main(cf):
         generator=g
     )
 
-    layers = torch.load(f"models/pcn-{cf.N}.pkl", map_location=torch.device('cpu'), weights_only=False)
+    with open(f"models/pcn-{cf.N}.pkl", "rb") as f:
+        layers = pickle.load(f)
+    f.close()
+
     model = PCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
@@ -33,15 +36,17 @@ def main(cf):
     plotting.plot_samples(ax, model.layers[1].weights)
     fig.savefig(f"outputs/pcn-{cf.N}/weights.png")
 
-    test_size = 10
-    img_batch, label_batch = next(iter(train_loader))
-    img_batch = img_batch[:test_size]
-
     # Replay
+    img_batch, label_batch = next(iter(train_loader))
+
     # Get EC activities for episodes
     img_batch = utils.set_tensor(img_batch)
-    model.test_updates(
-                img_batch, n_iters=cf.n_max_iters, step_tolerance=1e-5, fixed_preds=cf.fixed_preds_test
+    model.test_batch(
+        img_batch, 
+        n_iters=cf.n_max_iters, 
+        step_tolerance=cf.step_tolerance, 
+        init_std=cf.init_std, 
+        fixed_preds=cf.fixed_preds_test
     )
     ec_batch = utils.set_tensor(model.mus[0])
 
@@ -58,10 +63,12 @@ def main(cf):
     plotting.plot_samples(axes[0], img_batch, color=False)
     axes[1].set_title('Replay')
     plotting.plot_samples(axes[1], model.preds[-1], color=False)
-    fig.savefig(f"outputs/pcn-{cf.N}/replay.png") 
+    fig.savefig(f"outputs/pcn-{cf.N}/replay.png")
 
     # Recall
-    n_cut = img_batch.size(2)/2
+    recall_size = 10    
+    img_batch = img_batch[:recall_size]
+    n_cut = img_batch.size(1)//2
     img_batch_half = utils.mask_image(img_batch, n_cut)
     img_batch_half = utils.set_tensor(img_batch_half)
     model.recall_batch(
@@ -73,18 +80,18 @@ def main(cf):
         fixed_preds=cf.fixed_preds_test
     )
 
-    fig, axes = plt.subplots(test_size, 3, figsize = (5*3, 5*test_size))
+    fig, axes = plt.subplots(recall_size, 3, figsize = (5*3, 5*recall_size))
     axes[0, 0].set_title('Observation', fontsize=30)
     axes[0, 1].set_title('Recall', fontsize=30)
     axes[0, 2].set_title('Original', fontsize=30)
-    for m in range(test_size):
+    for m in range(recall_size):
         plotting.plot_samples(axes[m, 0], img_batch_half[m], color=False)
         plotting.plot_samples(axes[m, 1], model.mus[-1][m], color=False)
         plotting.plot_samples(axes[m, 2], img_batch[m], color=False)
     fig.savefig(f'outputs/pcn-{cf.N}/recall.png')
 
     dataset_test = torch.load('data/mnist_test.pt')
-    dset_test = TensorDataset(dataset_test['images'][:cf.N], dataset_test['labels'][:cf.N])
+    dset_test = TensorDataset(dataset_test['images'], dataset_test['labels'])
     test_loader = DataLoader(
         dset_test, 
         batch_size=cf.batch_size, 
@@ -94,7 +101,7 @@ def main(cf):
     )
 
     # Hierarchical representations of test data
-    fig = plotting.plot_levels(model, test_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds)
+    fig = plotting.plot_levels(model, test_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test)
     fig.savefig(f'outputs/pcn-{cf.N}/latents.png')
     
 
@@ -125,9 +132,11 @@ if __name__ == "__main__":
     cf.mu_dt = 0.01
     cf.n_train_iters = 50
     cf.n_test_iters = 200
+    cf.n_max_iters = 10000
+    cf.step_tolerance = 1e-5
     cf.init_std = 0.01
     cf.fixed_preds_train = False
-    cf.fixed_preds_test = False
+    cf.fixed_preds_test = False    
 
     # model params
     cf.use_bias = True

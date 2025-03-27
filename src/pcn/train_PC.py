@@ -78,8 +78,7 @@ def main(cf):
         os.makedirs("models")
 
     # Save model parameters
-    with open(f"models/pcn-{cf.N}.pkl", "wb") as f:
-        pickle.dump(model.layers, f)
+    torch.save(model.state_dict(), f"models/pcn-{cf.N}.pt")
 
     # Remove local media directory
     path = os.path.join(location, 'media')
