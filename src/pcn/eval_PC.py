@@ -107,11 +107,19 @@ if __name__ == "__main__":
         description="Script that evaluates the PC model trained on a dataset of size N"
     )
     parser.add_argument("--N", type=int, default=64, help="Enter training set size")
+    parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     args = parser.parse_args()
 
     # Hyperparameters dict
     cf = utils.AttrDict()
 
+    cf.N = args.N
+    cf.seed = args.seed
+
+    # Hyperparameters dict
+    cf = utils.AttrDict()
+
+    cf.seed = 0
     cf.N = args.N
     # inference params
     cf.mu_dt = 0.01

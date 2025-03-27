@@ -85,15 +85,18 @@ def main(cf):
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(
-        description="Script that evaluates the PC model trained on a dataset of size N"
+        description="Script that evaluates the recall performance of a PC model trained on a dataset of size N"
     )
     parser.add_argument("--N", type=int, default=64, help="Enter training set size")
+    parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     args = parser.parse_args()
 
     # Hyperparameters dict
     cf = utils.AttrDict()
 
     cf.N = args.N
+    cf.seed = args.seed
+    
     # inference params
     cf.mu_dt = 0.01
     cf.n_train_iters = 50
