@@ -24,7 +24,7 @@ def main(cf):
     )
 
 
-    layers = torch.load(f"models/pcn-{cf.N}.pkl", map_location=torch.device('cpu'))
+    layers = torch.load(f"models/pcn-{cf.N}.pkl", weights_only=False, map_location=torch.device('cpu'))
     model = PCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
