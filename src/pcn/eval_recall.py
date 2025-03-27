@@ -23,10 +23,8 @@ def main(cf):
         generator=g
     )
 
-    with open(f"models/pcn-{cf.N}.pkl", "rb") as f:
-        layers = pickle.load(f)
-    f.close()
 
+    layers = torch.load(f"models/pcn-{cf.N}.pkl", map_location=torch.device('cpu'))
     model = PCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
