@@ -113,22 +113,29 @@ if __name__ == "__main__":
     # Hyperparameters dict
     cf = utils.AttrDict()
 
-    cf.N = args.N
+    # experiment params
     cf.seed = args.seed
 
-    # Hyperparameters dict
-    cf = utils.AttrDict()
-
-    cf.seed = 0
+    # dataset params
+    cf.train_size = None
+    cf.test_size = None
+    cf.label_scale = None
+    cf.normalize = True
+    cf.batch_size = 64
     cf.N = args.N
+
     # inference params
     cf.mu_dt = 0.01
     cf.n_train_iters = 50
     cf.n_test_iters = 200
-    cf.n_max_iters = 10000
     cf.init_std = 0.01
     cf.fixed_preds_train = False
     cf.fixed_preds_test = False
-    cf.step_tolerance = 1-5
+
+    # model params
+    cf.use_bias = True
+    cf.kaiming_init = False
+    cf.nodes = [2, 35, 784]
+    cf.act_fn = utils.Tanh()
 
     main(cf)
