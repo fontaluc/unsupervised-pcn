@@ -253,7 +253,7 @@ class PCTrainer(object):
         self.model.eval_batch(img_batch, n_iters, fixed_preds=fixed_preds)
         valid_errors = []
         for n in range(self.model.n_nodes):
-            errors = self.model.get_errors(n)/self.nodes[n]
+            errors = self.model.get_errors(n)/self.model.nodes[n]
             valid_errors.append(errors.mean().item())
         return valid_errors
     
