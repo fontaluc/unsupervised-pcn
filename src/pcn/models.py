@@ -119,10 +119,10 @@ class PCModel(nn.Module):
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
                 self.errs[n] = self.mus[n] - self.preds[n]
 
-            errors = self.get_errors()
             for n in range(self.n_nodes):
+                errors = self.get_errors(n)/self.nodes[n]
                 for m in range(batch_size):
-                    self.plot_batch_errors[m][n].append(errors[m, n])          
+                    self.plot_batch_errors[m][n].append(errors[m])        
 
             if (relative_diff < step_tolerance).sum().item():
                 # Replay
@@ -151,10 +151,10 @@ class PCModel(nn.Module):
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
                 self.errs[n] = self.mus[n] - self.preds[n]
             
-            errors = self.get_errors()
             for n in range(self.n_nodes):
+                errors = self.get_errors(n)/self.nodes[n]
                 for m in range(batch_size):
-                    self.plot_batch_errors[m][n].append(errors[m, n])
+                    self.plot_batch_errors[m][n].append(errors[m])
 
             if (relative_diff < step_tolerance).sum().item():
                 break
@@ -182,10 +182,11 @@ class PCModel(nn.Module):
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
                 self.errs[n] = self.mus[n] - self.preds[n]
             
-            errors = self.get_errors()
+            
             for n in range(self.n_nodes):
+                errors = self.get_errors(n)/self.nodes[n]
                 for m in range(batch_size):
-                    self.plot_batch_errors[m][n].append(errors[m, n])
+                    self.plot_batch_errors[m][n].append(errors[m])
 
             if (relative_diff < step_tolerance).sum().item():
                 break       
@@ -194,25 +195,24 @@ class PCModel(nn.Module):
         for l in range(self.n_layers):
             self.layers[l].update_gradient(self.errs[l + 1])
     
-    def get_errors(self):
-        batch_size = len(self.errs[0])
-        errors = torch.empty(batch_size, self.n_nodes)
-        for n in range(self.n_nodes):
-            errors[:, n]  = torch.sum(self.errs[n] ** 2)/self.nodes[n]
-        return errors
+    def get_errors(self, n): # losses 
+        return torch.sum(self.errs[n] ** 2, axis=1)
     
 class PCTrainer(object):
-    def __init__(self, model, optimizer):
+    def __init__(self, model, optimizer=None):
         self.model = model
         self.optimizer = optimizer
     
-    def train(self, train_loader, epoch, n_train_iters, fixed_preds_train, log_freq):
-        self.activations = [[] for n in range(self.model.n_nodes)]
-        training_epoch_errors = [[] for _ in range(self.model.n_nodes)]
-        n_batches = len(train_loader)
-        for batch_id, (img_batch, label_batch) in enumerate(train_loader):   
+    def train(self, data_loader, epoch, n_iters, fixed_preds, log_freq):
+        """
+        Return errors (losses weighted by the inverse of the number of nodes) in all layers averaged over the 
+        training dataset
+        """
+        train_epoch_errors = [[] for _ in range(self.model.n_nodes)]
+        n_batches = len(data_loader)
+        for batch_id, (img_batch, label_batch) in enumerate(data_loader):   
             img_batch = utils.set_tensor(img_batch)
-            self.model.train_batch(img_batch, n_train_iters, fixed_preds=fixed_preds_train)
+            self.model.train_batch(img_batch, n_iters, fixed_preds=fixed_preds)
 
             # log gradients
             t = epoch * n_batches + batch_id
@@ -226,11 +226,11 @@ class PCTrainer(object):
                 n_batches=n_batches,
                 batch_size=img_batch.size(0),
             )
-            errors = self.model.get_errors()
-            
+           
             # gather data for the current batch
             for n in range(self.model.n_nodes):
-                training_epoch_errors[n] += [errors[:, n].mean().item()]
+                errors = self.model.get_errors(n)/self.model.nodes[n]
+                train_epoch_errors[n] += [errors.mean().item()]
             
             # log layer activations (except input) and weights            
             if t%log_freq == 0:
@@ -239,18 +239,38 @@ class PCTrainer(object):
                     wandb.log({f'weights_{n}': wandb.Histogram(self.model.layers[n].weights.cpu().detach())})
 
         # gather data for the full epoch
-        training_errors = []
+        train_errors = []
         for n in range(self.model.n_nodes):
-            error = np.mean(training_epoch_errors[n])
-            training_errors.append(error)
-        return training_errors 
+            error = np.mean(train_epoch_errors[n])
+            train_errors.append(error)
+        return train_errors 
     
-    def eval(self, valid_loader, n_test_iters, fixed_preds_test):
-        img_batch, label_batch = next(iter(valid_loader))
+    def eval(self, img_batch, n_iters, fixed_preds):
+        """
+        Return errors in all layers averaged over an input validation batch
+        """
         img_batch = utils.set_tensor(img_batch)
-        self.model.eval_batch(img_batch, n_test_iters, fixed_preds=fixed_preds_test)
-        errors = self.model.get_errors()
-        validation_errors = []
+        self.model.eval_batch(img_batch, n_iters, fixed_preds=fixed_preds)
+        valid_errors = []
         for n in range(self.model.n_nodes):
-            validation_errors.append(errors[:, n].mean().item())
-        return img_batch, label_batch, validation_errors
+            errors = self.model.get_errors(n)/self.nodes[n]
+            valid_errors.append(errors.mean().item())
+        return valid_errors
+    
+    def test(self, data_loader, n_iters, fixed_preds):
+        """
+        Return RMSE between original and reconstructed images averaged over the testing dataset
+        """
+        test_epoch_errors = []
+        for batch_id, (img_batch, label_batch) in enumerate(data_loader):   
+            img_batch = utils.set_tensor(img_batch)
+            self.model.test_batch(img_batch, n_iters, fixed_preds=fixed_preds)
+            errors = self.model.get_errors(-1).sqrt()/self.model.nodes[-1] # RMSE
+            
+            # gather data for the current batch
+            test_epoch_errors += [errors.mean().item()]
+
+        # gather data for the full epoch
+        test_error = np.mean(test_epoch_errors)
+
+        return test_error

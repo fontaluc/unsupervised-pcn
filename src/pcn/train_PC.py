@@ -56,17 +56,18 @@ def main(cf):
     with torch.no_grad():
         for epoch in range(cf.n_epochs):
 
-            training_errors = trainer.train(
+            train_errors = trainer.train(
                 train_loader, epoch, cf.n_train_iters, cf.fixed_preds_train, cf.log_freq
             )
             for n in range(model.n_nodes):
-                wandb.log({f'errors_{n}_train': training_errors[n], 'epoch': epoch})        
+                wandb.log({f'errors_{n}_train': train_errors[n], 'epoch': epoch})        
 
-            img_batch, label_batch, validation_errors = trainer.eval(
-                valid_loader, cf.n_test_iters, cf.fixed_preds_test
+            img_batch, label_batch = next(iter(valid_loader))            
+            valid_errors = trainer.eval(
+                img_batch,cf.n_test_iters, cf.fixed_preds_test
             )
             for n in range(model.n_nodes):
-                wandb.log({f'errors_{n}_valid': validation_errors[n], 'epoch': epoch})
+                wandb.log({f'errors_{n}_valid': valid_errors[n], 'epoch': epoch})
 
             plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
 
