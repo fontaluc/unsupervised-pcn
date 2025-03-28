@@ -26,7 +26,7 @@ def main(cf):
     model = PCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
-    model.load_state_dict(torch.load(f"models/pcn-{cf.N}.pt", map_location=torch.device('cpu'), weights_only=True))
+    model.load_state_dict(torch.load(f"models/pcn-{cf.N}.pt", map_location=utils.DEVICE, weights_only=True))
 
     # Create folder if it doesn't exist
     if not os.path.exists(f"outputs/pcn-{cf.N}"):

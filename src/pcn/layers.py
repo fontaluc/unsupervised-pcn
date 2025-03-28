@@ -39,12 +39,12 @@ class Layer(nn.Module):
     def _reset_params(self):
         weights = torch.empty((self.in_size, self.out_size)).normal_(mean=0.0, std=0.05)
         bias = torch.zeros((self.out_size))
-        self.weights = utils.set_tensor(weights)
-        self.bias = utils.set_tensor(bias)
+        self.weights = nn.Parameter(utils.set_tensor(weights))
+        self.bias = nn.Parameter(utils.set_tensor(bias))
 
     def _reset_params_kaiming(self):
-        self.weights = utils.set_tensor(torch.empty((self.in_size, self.out_size)))
-        self.bias = utils.set_tensor(torch.zeros((self.out_size)))
+        self.weights = nn.Parameter(utils.set_tensor(torch.empty((self.in_size, self.out_size))))
+        self.bias = nn.Parameter(utils.set_tensor(torch.zeros((self.out_size))))
         if isinstance(self.act_fn, utils.Linear):
             nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
         elif isinstance(self.act_fn, utils.Tanh):

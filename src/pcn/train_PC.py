@@ -5,7 +5,6 @@ import wandb
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 from pcn import optim
-import numpy as np
 import os
 from pcn import utils
 from pcn import plotting
