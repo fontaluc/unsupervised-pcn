@@ -25,8 +25,8 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-N=(1280 2560 3840 5120 6400 7680) 
+N=(1280 2560 3840 5120 6400 7680 8960) 
 n=${N[$SLURM_ARRAY_TASK_ID - 1]}
-N_epochs=(12352 10617 8882 7147 5412 3677)
+N_epochs=(12352 10617 8882 7147 5412 3677 1942)
 n_epochs=${N_epochs[$SLURM_ARRAY_TASK_ID - 1]}
 srun python $HOME/unsupervised-pcn/src/pcn/train_PC.py --n_epochs=$n_epochs --N=$n

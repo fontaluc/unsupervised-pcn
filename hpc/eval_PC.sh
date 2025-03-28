@@ -1,9 +1,11 @@
 #!/bin/sh
 ### General options
+### –- specify queue --
+#SBATCH -C sirocco
 ### -- set the job Name --
 #SBATCH -J eval_PC
 ### -- set the job array --
-#SBATCH --array=1-2
+#SBATCH --array=1-9
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- set walltime limit: j-h:m:s
@@ -21,6 +23,6 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-N=(64 10097)
+N=(64 1280 2560 3840 5120 6400 7680 8960 10097) 
 n=${N[$SLURM_ARRAY_TASK_ID - 1]}
 srun python $HOME/unsupervised-pcn/src/pcn/eval_PC.py --N=$n
