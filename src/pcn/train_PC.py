@@ -71,6 +71,10 @@ def main(cf):
 
             plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
 
+            # Remove local media directory
+            path = os.path.join(location, 'media')
+            shutil.rmtree(path)   
+
     wandb.finish()
 
     # Create models folder if it doesn't exist
@@ -79,10 +83,6 @@ def main(cf):
 
     # Save model parameters
     torch.save(model.state_dict(), f"models/pcn-{cf.N}.pt")
-
-    # Remove local media directory
-    path = os.path.join(location, 'media')
-    shutil.rmtree(path)             
 
 if __name__ == "__main__":
 
