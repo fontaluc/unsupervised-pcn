@@ -12,8 +12,8 @@
 #SBATCH --time 10:0:0
 ### -- Specify the output and error file. %J is the job-id --
 ### -- -o and -e mean append, -oo and -eo mean overwrite --
-#SBATCH -o /home/lfontain/unsupervised-pcn/outputs/logs/train_PC_schedule_%J.out
-#SBATCH -e /home/lfontain/unsupervised-pcn/outputs/logs/train_PC_schedule_%J.err
+#SBATCH -o /beegfs/lfontain/unsupervised-pcn/outputs/logs/train_PC_schedule_%J.out
+#SBATCH -e /beegfs/lfontain/unsupervised-pcn/outputs/logs/train_PC_schedule_%J.err
 # -- end of Slurm options --
 
 

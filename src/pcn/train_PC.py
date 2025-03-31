@@ -155,6 +155,7 @@ if __name__ == "__main__":
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None
+    cf.schedule = args.schedule
 
     # inference params
     cf.mu_dt = 0.01
