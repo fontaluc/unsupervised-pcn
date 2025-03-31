@@ -5,7 +5,7 @@
 ### -- set the job Name --
 #SBATCH -J train_PC
 ### -- set the job array --
-#SBATCH --array=1-7
+#SBATCH --array=1-5
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
@@ -25,8 +25,10 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-N=(1280 2560 3840 5120 6400 7680 8960) 
+#N=(1280 2560 3840 5120 6400 7680 8960) 
+N=(64 1280 2560 6400 7680)
 n=${N[$SLURM_ARRAY_TASK_ID - 1]}
-N_epochs=(3800 1900 1200 900 700 600 500)
+#N_epochs=(3800 1900 1200 900 700 600 500)
+N_epochs=(14000 3800 1900 700 600)
 n_epochs=${N_epochs[$SLURM_ARRAY_TASK_ID - 1]}
 srun python $HOME/unsupervised-pcn/src/pcn/train_PC.py --n_epochs=$n_epochs --N=$n
