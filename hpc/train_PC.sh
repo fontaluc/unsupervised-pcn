@@ -31,4 +31,4 @@ n=${N[$SLURM_ARRAY_TASK_ID - 1]}
 #N_epochs=(3800 1900 1200 900 700 600 500)
 N_epochs=(14000 3800 1900 700 600)
 n_epochs=${N_epochs[$SLURM_ARRAY_TASK_ID - 1]}
-srun python $HOME/unsupervised-pcn/src/pcn/train_PC.py --n_epochs=$n_epochs --N=$n
+srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/train_PC.py --n_epochs=$n_epochs --N=$n
