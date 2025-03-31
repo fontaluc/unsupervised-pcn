@@ -10,7 +10,7 @@ ssh username@plafrim
 ```
 * Load conda
 ```
-module load build/conda/4.1009
+module load build/conda/4.10
 ```
 * Create conda environment
 ```

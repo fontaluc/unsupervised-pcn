@@ -69,13 +69,13 @@ def main(cf):
             for n in range(model.n_nodes):
                 wandb.log({f'errors_{n}_valid': valid_errors[n], 'epoch': epoch})
 
-            plotting.log_mnist_plots(model, img_batch, label_batch, epoch)
-
-            # Remove local media directory
-            path = os.path.join(location, 'media')
-            shutil.rmtree(path)   
+            plotting.log_mnist_plots(model, img_batch, label_batch, epoch) 
 
     wandb.finish()
+
+    # Remove local media directory
+    path = os.path.join(location, 'media')
+    shutil.rmtree(path)  
 
     # Create models folder if it doesn't exist
     if not os.path.exists("models"):
