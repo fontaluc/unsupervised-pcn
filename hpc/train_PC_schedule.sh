@@ -23,4 +23,4 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/train_PC.py --n_epochs=10000 --schedule=true
+srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/train_PC.py --n_epochs=10000 --N=10097 --schedule=true
