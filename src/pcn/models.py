@@ -199,9 +199,9 @@ class PCModel(nn.Module):
         return torch.sum(self.errs[n] ** 2, axis=1)
     
 class PCTrainer(object):
-    def __init__(self, model, optimizer=None):
+    def __init__(self, model, optimizers=[]):
         self.model = model
-        self.optimizer = optimizer
+        self.optimizers = optimizers
     
     def train(self, data_loader, epoch, n_iters, fixed_preds, log_freq):
         """
@@ -220,12 +220,13 @@ class PCTrainer(object):
                 for l in range(self.model.n_layers):
                     wandb.log({f'grad_{l}': wandb.Histogram(self.model.layers[l].grad['weights'].cpu().detach())})
 
-            self.optimizer.step(
-                curr_epoch=epoch,
-                curr_batch=batch_id,
-                n_batches=n_batches,
-                batch_size=img_batch.size(0),
-            )
+            for optimizer in self.optimizers:
+                optimizer.step(
+                    curr_epoch=epoch,
+                    curr_batch=batch_id,
+                    n_batches=n_batches,
+                    batch_size=img_batch.size(0),
+                )
            
             # gather data for the current batch
             for n in range(self.model.n_nodes):

@@ -42,16 +42,35 @@ def main(cf):
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
     
-    optimizer = optim.get_optim(
-        model.layers,
-        cf.optim,
-        cf.lr,
-        batch_scale=cf.batch_scale,
-        grad_clip=cf.grad_clip,
-        weight_decay=cf.weight_decay,
-    ) 
+    if cf.schedule:
+        optimizers = [
+            optim.get_optim(
+            model.layers,
+            cf.optim,
+            cf.lr,
+            batch_scale=cf.batch_scale,
+            grad_clip=cf.grad_clip,
+            weight_decay=cf.weight_decay,
+        )
+        for l in range(model.n_layers)
+        ]
+        schedulers = [
+            optim.ReduceLROnPlateau(optimizers[l], cf.factor, cf.patience, cf.threshold, cf.low_threshold, cf.min_lr) 
+            for l in range(model.n_layers)
+        ]
+    else:
+        optimizers = [
+            optim.get_optim(
+            model.layers,
+            cf.optim,
+            cf.lr,
+            batch_scale=cf.batch_scale,
+            grad_clip=cf.grad_clip,
+            weight_decay=cf.weight_decay,
+        )
+        ]
 
-    trainer = PCTrainer(model, optimizer)
+    trainer = PCTrainer(model, optimizers)
 
     with torch.no_grad():
         for epoch in range(cf.n_epochs):
@@ -60,7 +79,18 @@ def main(cf):
                 train_loader, epoch, cf.n_train_iters, cf.fixed_preds_train, cf.log_freq
             )
             for n in range(model.n_nodes):
-                wandb.log({f'errors_{n}_train': train_errors[n], 'epoch': epoch})        
+                wandb.log({f'errors_{n}_train': train_errors[n], 'epoch': epoch})
+
+            if cf.schedule:
+                for l in range(model.n_layers):
+                    metrics = train_errors[l+1]
+                    if epoch > 0:                
+                        better_ratio, low_ratio = utils.compute_ratios(metrics, schedulers[l])
+                        wandb.log({f'better_ratio_{l}': better_ratio, 'epoch': epoch})
+                        wandb.log({f'low_ratio_{l}': low_ratio, 'epoch': epoch})
+                    schedulers[l].step(metrics)
+                    wandb.log({f'scheduler_count_{l}': schedulers[l].num_bad_epochs, 'epoch': epoch})
+                    wandb.log({f'lr_{l}': optimizers[l].lr, 'epoch': epoch})        
 
             img_batch, label_batch = next(iter(valid_loader))            
             valid_errors = trainer.eval(
@@ -70,6 +100,9 @@ def main(cf):
                 wandb.log({f'errors_{n}_valid': valid_errors[n], 'epoch': epoch})
 
             plotting.log_mnist_plots(model, img_batch, label_batch, epoch) 
+
+            if utils.early_stop(optimizers, cf.lr):
+                break
 
     wandb.finish()
 
@@ -92,6 +125,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_epochs", required=True, type=int, help="Enter number of epochs")
     parser.add_argument("--N", type=int, default=64, help="Enter training set size")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
+    parser.add_argument("--schedule", type=bool, default=False, help="Enter scheduler use")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -101,6 +135,10 @@ if __name__ == "__main__":
     cf.seed = args.seed
     cf.n_epochs = args.n_epochs
     cf.log_freq = 1000 # steps
+    cf.factor = 0.5
+    cf.threshold = 1e-4
+    cf.low_threshold = 0.2
+    cf.patience = 100
 
     # dataset params
     cf.train_size = None
@@ -113,6 +151,7 @@ if __name__ == "__main__":
     # optim params
     cf.optim = "Adam"
     cf.lr = 1e-4
+    cf.min_lr = 1e-6
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None
