@@ -196,4 +196,4 @@ def rmse(img_batch, img_batch_recall):
 
 def early_stop(optimizers, lr):
     L = len(optimizers)
-    return sum([optimizers[l].lr < lr[l] for l in range(L)]) == L
+    return sum([optimizers[l].lr < lr for l in range(L)]) == L
