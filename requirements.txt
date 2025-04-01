@@ -5,3 +5,4 @@ scikit_learn==1.6.1
 seaborn==0.13.2
 setuptools==75.1.0
 wandb==0.19.6
+tqdm==4.67.1
