@@ -196,7 +196,7 @@ class PCModel(nn.Module):
             self.layers[l].update_gradient(self.errs[l + 1])
     
     def get_errors(self, n): # losses 
-        return torch.sum(self.errs[n] ** 2, axis=1)
+        return torch.sum(self.errs[n] ** 2, dim=1)
     
 class PCTrainer(object):
     def __init__(self, model, optimizers=[]):

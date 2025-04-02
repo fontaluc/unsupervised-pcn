@@ -115,7 +115,7 @@ def main(cf):
         os.makedirs("models")
 
     # Save model parameters
-    torch.save(model.state_dict(), f"models/pcn-{cf.N}.pt")
+    torch.save(model.state_dict(), f"models/pcn-{cf.N}-schedule={cf.schedule}.pt")
 
 if __name__ == "__main__":
 
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     cf.factor = 0.5
     cf.threshold = 1e-4
     cf.low_threshold = 0.2
-    cf.patience = 100
+    cf.patience = 10
 
     # dataset params
     cf.train_size = None
@@ -150,7 +150,7 @@ if __name__ == "__main__":
 
     # optim params
     cf.optim = "Adam"
-    cf.lr = 1e-4
+    cf.lr = [1e-4, 1e-5]
     cf.min_lr = 1e-6
     cf.batch_scale = True
     cf.grad_clip = None
