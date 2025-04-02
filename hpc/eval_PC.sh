@@ -1,7 +1,5 @@
 #!/bin/sh
 ### General options
-### –- specify queue --
-#SBATCH -C sirocco
 ### -- set the job Name --
 #SBATCH -J eval_PC
 ### -- set the job array --
