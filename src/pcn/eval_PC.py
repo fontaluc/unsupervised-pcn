@@ -70,7 +70,7 @@ def main(cf):
     rmse = 0 
     with torch.no_grad():
         for img_batch, label_batch in tqdm(train_loader):
-            img_batch_half = utils.mask_image(img_batch, cf.n_cut)
+            img_batch_half = utils.mask_image(img_batch, n_cut)
             img_batch_half = utils.set_tensor(img_batch_half)
             model.recall_batch(
                 img_batch_half, 

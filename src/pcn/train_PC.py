@@ -10,6 +10,7 @@ from pcn import plotting
 import argparse
     
 def main(cf):
+    os.environ["WANDB__SERVICE_WAIT"] = "300" # sometimes wandb takes more than 30s (the default time limit) to start
     wandb.login()
     wandb.init(project="unsupervised-pcn", config=cf)
     location = wandb.run.dir
