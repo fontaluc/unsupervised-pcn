@@ -1,4 +1,3 @@
-import pickle
 import shutil
 from pcn.models import PCModel, PCTrainer
 import wandb
@@ -47,7 +46,7 @@ def main(cf):
             optim.get_optim(
             model.layers,
             cf.optim,
-            cf.lr,
+            cf.lr[l],
             batch_scale=cf.batch_scale,
             grad_clip=cf.grad_clip,
             weight_decay=cf.weight_decay,
