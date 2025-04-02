@@ -135,7 +135,7 @@ if __name__ == "__main__":
     cf.seed = args.seed
     cf.n_epochs = args.n_epochs
     cf.log_freq = 1000 # steps
-    cf.factor = 0.5
+    cf.factor = 0.9
     cf.threshold = 1e-4
     cf.low_threshold = 0.2
     cf.patience = 10
