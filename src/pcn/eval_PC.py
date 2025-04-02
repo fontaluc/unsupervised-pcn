@@ -40,14 +40,15 @@ def main(cf):
     n_cut = img_batch.size(1)//2
     img_batch_half = utils.mask_image(img_batch, n_cut)
     img_batch_half = utils.set_tensor(img_batch_half)
-    model.recall_batch(
-        img_batch_half, 
-        cf.n_max_iters, 
-        n_cut=n_cut, 
-        step_tolerance=cf.step_tolerance,
-        init_std=cf.init_std,
-        fixed_preds=cf.fixed_preds_test
-    )
+    with torch.no_grad():
+        model.recall_batch(
+            img_batch_half, 
+            cf.n_max_iters, 
+            n_cut=n_cut, 
+            step_tolerance=cf.step_tolerance,
+            init_std=cf.init_std,
+            fixed_preds=cf.fixed_preds_test
+        )
 
     fig, axes = plt.subplots(test_size, model.n_nodes, figsize=(5*model.n_nodes, 5*test_size))
     for m in range(test_size):
@@ -67,18 +68,19 @@ def main(cf):
 
     # Quantitatively on the whole training set: average RMSE between recalled and original images
     rmse = 0 
-    for img_batch, label_batch in tqdm(train_loader):
-        img_batch_half = utils.mask_image(img_batch, cf.n_cut)
-        img_batch_half = utils.set_tensor(img_batch_half)
-        model.recall_batch(
-            img_batch_half, 
-            cf.n_max_iters, 
-            n_cut=n_cut, 
-            step_tolerance=cf.step_tolerance,
-            init_std=cf.init_std,
-            fixed_preds=cf.fixed_preds_test
-        )
-        rmse += torch.sum(utils.rmse(img_batch, model.mus[-1])).item()
+    with torch.no_grad():
+        for img_batch, label_batch in tqdm(train_loader):
+            img_batch_half = utils.mask_image(img_batch, cf.n_cut)
+            img_batch_half = utils.set_tensor(img_batch_half)
+            model.recall_batch(
+                img_batch_half, 
+                cf.n_max_iters, 
+                n_cut=n_cut, 
+                step_tolerance=cf.step_tolerance,
+                init_std=cf.init_std,
+                fixed_preds=cf.fixed_preds_test
+            )
+            rmse += torch.sum(utils.rmse(img_batch, model.mus[-1])).item()
     rmse = rmse/cf.N
     with open("outputs/recall_rmse.txt", "w") as f:
         f.write(f"{cf.N, rmse}")
@@ -94,7 +96,8 @@ def main(cf):
         generator=g
     )
     trainer = PCTrainer(model)
-    test_rmse = trainer.test(test_loader, cf.n_max_iters, cf.fixed_preds_test)
+    with torch.no_grad():
+        test_rmse = trainer.test(test_loader, cf.n_max_iters, cf.fixed_preds_test)
     with open("outputs/test_rmse.txt", "w") as f:
         f.write(f"{cf.N, test_rmse}")
 
