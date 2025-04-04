@@ -101,8 +101,9 @@ def main(cf):
 
             plotting.log_mnist_plots(model, img_batch, label_batch, epoch) 
 
-            if utils.early_stop(optimizers, cf.lr):
-                break
+            if cf.schedule:
+                if utils.early_stop(optimizers, cf.lr):
+                    break
 
     wandb.finish()
 

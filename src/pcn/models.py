@@ -180,8 +180,7 @@ class PCModel(nn.Module):
             for n in range(1, self.n_nodes):
                 if not fixed_preds:
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
-                self.errs[n] = self.mus[n] - self.preds[n]
-            
+                self.errs[n] = self.mus[n] - self.preds[n]            
             
             for n in range(self.n_nodes):
                 errors = self.get_errors(n)/self.nodes[n]
