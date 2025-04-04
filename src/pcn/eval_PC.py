@@ -84,7 +84,7 @@ def main(cf):
     rmse = rmse/cf.N
     mode = 'a' if os.path.exists("outputs/recall_rmse.txt") else 'w'
     with open("outputs/recall_rmse.txt", mode) as f:
-        f.write(f"{cf.N, rmse}")
+        f.write(f"{cf.N}, {rmse} \n")
 
     ## Generalization performance
     dataset_test = torch.load('data/mnist_test.pt')
@@ -101,7 +101,7 @@ def main(cf):
         test_rmse = trainer.test(test_loader, cf.n_max_iters, cf.fixed_preds_test)
     mode = 'a' if os.path.exists("outputs/test_rmse.txt") else 'w'
     with open("outputs/test_rmse.txt", mode) as f:
-        f.write(f"{cf.N, float(test_rmse)}") # convert np.float64 to float for writing
+        f.write(f"{cf.N}, {float(test_rmse)} \n") # convert np.float64 to float for writing
 
 if __name__ == "__main__":
     

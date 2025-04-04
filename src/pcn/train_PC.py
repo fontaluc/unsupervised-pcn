@@ -150,7 +150,7 @@ if __name__ == "__main__":
 
     # optim params
     cf.optim = "Adam"
-    cf.lr = [1e-3, 1e-7]
+    cf.lr = [1e-3, 1e-6]
     cf.min_lr = 0
     cf.batch_scale = True
     cf.grad_clip = None
