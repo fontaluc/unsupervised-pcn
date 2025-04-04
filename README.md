@@ -49,8 +49,21 @@ python src/pcn/make_mnist.py
 ```
 * Launch job on PLaFRIM
 ```
-sbatch hpc/train_AM.sh
+sbatch hpc/train_PC.sh
+sbatch hpc/eval_PC.sh
 ```
+* Exit PlaFRIM
+```
+exit
+```
+* Copy result files from PLaFRIM to local machine
+```
+eval $(ssh-agent)
+ssh-add
+ssh username@plafrim "find /beegfs/username/unsupervised-pcn/outputs -mindepth 1 -maxdepth 1 ! -name 'logs'" | xargs -I {} scp -r username@plafrim:{} .git/unsupervised-pcn/outputs/
+```
+The first two lines are used to only have to enter the passphrase once to copy files from PLaFRIM, using a SSH-Agent. The last line copies all files and folders in the outputs directory on PLaFRIM except the logs folder to the outputs directory of the local machine.
+
 
 ## Useful tips for PLaFRIM
 * Check available modules
