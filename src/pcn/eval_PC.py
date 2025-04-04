@@ -82,7 +82,8 @@ def main(cf):
             )
             rmse += torch.sum(utils.rmse(img_batch, model.mus[-1])).item()
     rmse = rmse/cf.N
-    with open("outputs/recall_rmse.txt", "w") as f:
+    mode = 'a' if os.path.exists("outputs/recall_rmse.txt") else 'w'
+    with open("outputs/recall_rmse.txt", mode) as f:
         f.write(f"{cf.N, rmse}")
 
     ## Generalization performance
@@ -98,8 +99,9 @@ def main(cf):
     trainer = PCTrainer(model)
     with torch.no_grad():
         test_rmse = trainer.test(test_loader, cf.n_max_iters, cf.fixed_preds_test)
-    with open("outputs/test_rmse.txt", "w") as f:
-        f.write(f"{cf.N, test_rmse}")
+    mode = 'a' if os.path.exists("outputs/test_rmse.txt") else 'w'
+    with open("outputs/test_rmse.txt", mode) as f:
+        f.write(f"{cf.N, float(test_rmse)}") # convert np.float64 to float for writing
 
 if __name__ == "__main__":
     
