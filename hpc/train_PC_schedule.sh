@@ -1,7 +1,7 @@
 #!/bin/sh
 ### General options
 ### –- specify queue --
-#SBATCH -C sirocco
+#SBATCH -C a100
 ### -- set the job Name --
 #SBATCH -J train_PC_schedule
 ### -- set the job array --
@@ -11,7 +11,7 @@
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #SBATCH --exclusive
 ### -- set walltime limit: j-h:m:s
-#SBATCH --time 10:0:0
+#SBATCH --time 1-0
 ### -- Specify the output and error file. %A_%a is the job-id --
 ### -- -o and -e mean append, -oo and -eo mean overwrite --
 #SBATCH -o /beegfs/lfontain/unsupervised-pcn/outputs/logs/train_PC_schedule_%A_%a.out
