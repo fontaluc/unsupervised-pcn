@@ -152,7 +152,7 @@ if __name__ == "__main__":
     # optim params
     cf.schedule = args.schedule
     cf.optim = "Adam"
-    cf.lr = [3e-4, 1e-7] if cf.schedule else 1e-4
+    cf.lr = [1e-4, 1e-7] if cf.schedule else 1e-4
     cf.min_lr = 0
     cf.batch_scale = True
     cf.grad_clip = None
