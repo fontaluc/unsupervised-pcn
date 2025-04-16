@@ -5,7 +5,7 @@
 ### -- set the job Name --
 #SBATCH -J train_PC
 ### -- set the job array --
-###SBATCH --array=1-2
+#SBATCH --array=1-2
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
