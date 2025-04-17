@@ -80,6 +80,7 @@ def main(cf):
                 init_std=cf.init_std,
                 fixed_preds=cf.fixed_preds_test
             )
+            img_batch = utils.set_tensor(img_batch)
             rmse += torch.sum(utils.rmse(img_batch, model.mus[-1])).item()
     rmse = rmse/cf.N
     mode = 'a' if os.path.exists("outputs/recall_rmse.txt") else 'w'
