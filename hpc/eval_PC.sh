@@ -3,7 +3,7 @@
 ### -- set the job Name --
 #SBATCH -J eval_PC
 ### -- set the job array --
-#SBATCH --array=1-9
+#SBATCH --array=1-5
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- set walltime limit: j-h:m:s
@@ -21,6 +21,6 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-N=(64 1280 2560 3840 5120 6400 7680 8960 10097) 
+N=(128 256 384 512 640)
 n=${N[$SLURM_ARRAY_TASK_ID - 1]}
 srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/eval_PC.py --N=$n
