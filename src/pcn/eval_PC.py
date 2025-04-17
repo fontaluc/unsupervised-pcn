@@ -26,7 +26,7 @@ def main(cf):
     model = PCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
-    model.load_state_dict(torch.load(f"models/pcn-{cf.N}.pt", map_location=utils.DEVICE, weights_only=True))
+    model.load_state_dict(torch.load(f"models/pcn-{cf.N}-schedule={cf.schedule}.pt", map_location=utils.DEVICE, weights_only=True))
 
     # Create folder if it doesn't exist
     if not os.path.exists(f"outputs/pcn-{cf.N}"):
@@ -110,6 +110,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--N", type=int, default=64, help="Enter training set size")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
+    parser.add_argument("--schedule", type=bool, default=False, help="Enter scheduler use")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -139,5 +140,7 @@ if __name__ == "__main__":
     cf.kaiming_init = False
     cf.nodes = [2, 35, 784]
     cf.act_fn = utils.Tanh()
+
+    cf.schedule = args.schedule
 
     main(cf)
