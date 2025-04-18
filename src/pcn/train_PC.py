@@ -47,7 +47,7 @@ def main(cf):
             optim.get_optim(
             model.layers,
             cf.optim,
-            cf.lr[l],
+            cf.lr,
             batch_scale=cf.batch_scale,
             grad_clip=cf.grad_clip,
             weight_decay=cf.weight_decay,
@@ -136,10 +136,10 @@ if __name__ == "__main__":
     cf.seed = args.seed
     cf.n_epochs = args.n_epochs
     cf.log_freq = 1000 # steps
-    cf.factor = 0.9
+    cf.factor = 0.5
     cf.threshold = 1e-4
     cf.low_threshold = 0.2
-    cf.patience = 10
+    cf.patience = 100
 
     # dataset params
     cf.train_size = None
@@ -152,8 +152,8 @@ if __name__ == "__main__":
     # optim params
     cf.schedule = args.schedule
     cf.optim = "Adam"
-    cf.lr = [1e-4, 1e-7] if cf.schedule else 1e-4
-    cf.min_lr = 0
+    cf.lr = 1e-4
+    cf.min_lr = 1e-6
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None
