@@ -137,7 +137,7 @@ if __name__ == "__main__":
     cf.n_epochs = args.n_epochs
     cf.log_freq = 1000 # steps
     cf.factor = 0.5
-    cf.threshold = 1e-4
+    cf.threshold = 2e-4
     cf.low_threshold = 0.2
     cf.patience = 10
 
