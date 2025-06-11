@@ -125,6 +125,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--n_epochs", required=True, type=int, help="Enter number of epochs")
     parser.add_argument("--N", type=int, default=64, help="Enter training set size")
+    parser.add_argument("--n_ec", type=int, default=2, help="Enter size of EC layer")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--schedule", type=bool, default=False, help="Enter scheduler use")
     args = parser.parse_args()
@@ -170,7 +171,7 @@ if __name__ == "__main__":
     # model params
     cf.use_bias = True
     cf.kaiming_init = False
-    cf.nodes = [2, 35, 784]
+    cf.nodes = [args.n_ec, 35, 784]
     cf.act_fn = utils.Tanh()
 
     main(cf)

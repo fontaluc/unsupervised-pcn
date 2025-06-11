@@ -56,13 +56,15 @@ sbatch hpc/eval_PC.sh
 ```
 exit
 ```
-* Copy result files from PLaFRIM to local machine
+
+## Copy result files from PLaFRIM to local machine
 ```
 eval $(ssh-agent)
 ssh-add
-ssh username@plafrim "find /beegfs/username/unsupervised-pcn/outputs -mindepth 1 -maxdepth 1 ! -name 'logs'" | xargs -I {} scp -r username@plafrim:{} .git/unsupervised-pcn/outputs/
+rsync -avz --exclude='logs' plafrim:/beegfs/lfontain/unsupervised-pcn/outputs/ ~/.git/unsupervised-pcn/plafrim-outputs/
+
 ```
-The first two lines are used to only have to enter the passphrase once to copy files from PLaFRIM, using a SSH-Agent. The last line copies all files and folders in the outputs directory on PLaFRIM except the logs folder to the outputs directory of the local machine.
+The first two lines are used to only have to enter the passphrase once to copy files from PLaFRIM, using a SSH-Agent. The last line synchronizes the outputs directory on PLaFRIM except the logs folder with the outputs directory of the local machine. In order to use rsync, install it using the installation script provided [here](https://scicomp.aalto.fi/scicomp/rsynconwindows/) (if you are on Windows). 
 
 
 ## Useful tips for PLaFRIM
