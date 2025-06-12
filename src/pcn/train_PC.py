@@ -116,7 +116,7 @@ def main(cf):
         os.makedirs("models")
 
     # Save model parameters
-    torch.save(model.state_dict(), f"models/pcn-{cf.N}-schedule={cf.schedule}.pt")
+    torch.save(model.state_dict(), f"models/pcn-N={cf.N}-n_ec={cf.n_ec}-schedule={cf.schedule}.pt")
 
 if __name__ == "__main__":
 
@@ -171,7 +171,8 @@ if __name__ == "__main__":
     # model params
     cf.use_bias = True
     cf.kaiming_init = False
-    cf.nodes = [args.n_ec, 35, 784]
+    cf.n_ec = args.n_ec
+    cf.nodes = [cf.n_ec, 35, 784]
     cf.act_fn = utils.Tanh()
 
     main(cf)
