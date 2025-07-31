@@ -128,7 +128,7 @@ if __name__ == "__main__":
     # inference params
     cf.mu_dt = 0.01
     cf.n_train_iters = 50
-    cf.n_test_iters = 200
+    cf.n_max_iters = 10000
     cf.init_std = 0.01
     cf.fixed_preds_train = False
     cf.fixed_preds_test = False
