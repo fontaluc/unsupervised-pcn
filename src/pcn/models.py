@@ -244,7 +244,7 @@ class PCTrainer(object):
         self.model = model
         self.optimizers = optimizers
     
-    def train(self, data_loader, epoch, n_iters, fixed_preds, log_freq, log=True):
+    def train(self, data_loader, epoch, n_iters, fixed_preds, log=True, log_freq=1000):
         """
         Return errors (losses weighted by the inverse of the number of nodes) in all layers averaged over the 
         training dataset

@@ -69,7 +69,7 @@ def main(cf):
         for epoch in range(cf.n_epochs):
 
             train_errors = trainer.train(
-                train_loader, epoch, cf.n_train_iters, cf.fixed_preds_train, cf.log_freq
+                train_loader, epoch, cf.n_train_iters, cf.fixed_preds_train, cf.log
             )
 
             if cf.schedule:
@@ -103,7 +103,6 @@ if __name__ == "__main__":
     cf.seed = args.seed
     cf.n_epochs = 1000
     cf.log = False
-    cf.log_freq = 1000 # steps
     cf.factor = 0.5
     cf.threshold = 2e-4
     cf.low_threshold = 0.2
