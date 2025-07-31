@@ -22,5 +22,5 @@ module load compiler/cuda/12.3
 conda activate torch_env
 
 N_hidden=(10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200)
-n_hidden=${N[$SLURM_ARRAY_TASK_ID - 1]}
+n_hidden=${N_hidden[$SLURM_ARRAY_TASK_ID - 1]}
 srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/train_one_layer.py --n_hidden=$n_hidden
