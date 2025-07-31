@@ -81,10 +81,6 @@ def main(cf):
                 if utils.early_stop(optimizers, cf.lr):
                     break 
 
-    # Create models folder if it doesn't exist
-    if not os.path.exists("models"):
-        os.makedirs("models")
-
     # Evaluate validation error
     valid_error = trainer.test(valid_loader, cf.n_max_iters, cf.fixed_preds_test)
     mode = 'a' if os.path.exists("outputs/one_layer_valid_error.txt") else 'w'
@@ -94,13 +90,10 @@ def main(cf):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Script that trains the PC model on a training set of size N"
+        description="Script that trains a PCN with one hidden layer."
     )
     parser.add_argument("--n_hidden", type=int, default=100, help="Enter size of hidden layer")
-    parser.add_argument("--n_epochs", type=int, default=1000, help="Enter number of epochs")
-    parser.add_argument("--N", type=int, default=10097, help="Enter training set size")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
-    parser.add_argument("--schedule", type=bool, default=True, help="Enter scheduler use")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -108,7 +101,8 @@ if __name__ == "__main__":
 
     # experiment params
     cf.seed = args.seed
-    cf.n_epochs = args.n_epochs
+    cf.n_epochs = 1000
+    cf.log = False
     cf.log_freq = 1000 # steps
     cf.factor = 0.5
     cf.threshold = 2e-4
@@ -121,10 +115,10 @@ if __name__ == "__main__":
     cf.label_scale = None
     cf.normalize = True
     cf.batch_size = 64
-    cf.N = args.N
+    cf.N = 10097
 
     # optim params
-    cf.schedule = args.schedule
+    cf.schedule = True
     cf.optim = "Adam"
     cf.lr = 1e-4
     cf.min_lr = 1e-6
