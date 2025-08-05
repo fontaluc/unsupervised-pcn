@@ -123,9 +123,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Script that trains the PC model on a training set of size N"
     )
-    parser.add_argument("--n_epochs", required=True, type=int, help="Enter number of epochs")
-    parser.add_argument("--N", type=int, default=64, help="Enter training set size")
-    parser.add_argument("--n_ec", type=int, default=2, help="Enter size of EC layer")
+    parser.add_argument("--n_epochs", type=int, default=1000, help="Enter number of epochs")
+    parser.add_argument("--N", type=int, default=10097, help="Enter training set size")
+    parser.add_argument("--n_vc", type=int, default=400, help="Enter size of VC layer")
+    parser.add_argument("--n_ec", type=int, default=10, help="Enter size of EC layer")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--schedule", type=bool, default=False, help="Enter scheduler use")
     args = parser.parse_args()
@@ -171,8 +172,9 @@ if __name__ == "__main__":
     # model params
     cf.use_bias = True
     cf.kaiming_init = False
+    cf.n_vc = args.n_vc
     cf.n_ec = args.n_ec
-    cf.nodes = [cf.n_ec, 35, 784]
+    cf.nodes = [cf.n_ec, cf.n_vc, 784]
     cf.act_fn = utils.Tanh()
 
     main(cf)
