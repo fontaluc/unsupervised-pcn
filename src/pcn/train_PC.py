@@ -154,8 +154,8 @@ if __name__ == "__main__":
     # optim params
     cf.schedule = args.schedule
     cf.optim = "Adam"
-    cf.lr = 1e-4
-    cf.min_lr = 1e-6
+    cf.lr = 1e-6
+    cf.min_lr = 1e-8
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None
