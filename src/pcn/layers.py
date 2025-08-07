@@ -69,7 +69,16 @@ class FCLayer(Layer):
         alpha=0.1, 
         ema_alpha=0.01
     ):
-        super().__init__(in_size, out_size, act_fn, use_bias, kaiming_init, use_decay, alpha, is_forward=is_forward)
+        super().__init__(
+            in_size, 
+            out_size, 
+            act_fn, 
+            use_bias, 
+            kaiming_init, 
+            use_decay, 
+            alpha, 
+            ema_alpha, 
+            is_forward=is_forward)
         self.use_bias = use_bias
         self.inp = None
         self.use_decay = use_decay
