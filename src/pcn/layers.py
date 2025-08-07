@@ -74,10 +74,7 @@ class FCLayer(Layer):
             out_size, 
             act_fn, 
             use_bias, 
-            kaiming_init, 
-            use_decay, 
-            alpha, 
-            ema_alpha, 
+            kaiming_init,
             is_forward=is_forward)
         self.use_bias = use_bias
         self.inp = None
