@@ -124,11 +124,13 @@ if __name__ == "__main__":
         description="Script that trains the PC model on a training set of size N"
     )
     parser.add_argument("--n_epochs", type=int, default=1000, help="Enter number of epochs")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Enter learning rate")
     parser.add_argument("--N", type=int, default=10097, help="Enter training set size")
     parser.add_argument("--n_vc", type=int, default=400, help="Enter size of VC layer")
     parser.add_argument("--n_ec", type=int, default=10, help="Enter size of EC layer")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--schedule", type=bool, default=False, help="Enter scheduler use")
+    parser.add_argument("--decay", type=bool, default=False, help="Enter decay use")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -154,12 +156,11 @@ if __name__ == "__main__":
     # optim params
     cf.schedule = args.schedule
     cf.optim = "Adam"
-    cf.lr = 1e-5
-    cf.min_lr = 1e-7
+    cf.lr = args.lr
+    cf.min_lr = 1e-6
     cf.batch_scale = True
     cf.grad_clip = None
     cf.weight_decay = None
-    
 
     # inference params
     cf.mu_dt = 0.01
@@ -176,5 +177,6 @@ if __name__ == "__main__":
     cf.n_ec = args.n_ec
     cf.nodes = [cf.n_ec, cf.n_vc, 784]
     cf.act_fn = utils.Tanh()
+    cf.use_decay = args.decay
 
     main(cf)
