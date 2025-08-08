@@ -23,4 +23,4 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/train_PC.py --lr=1e-5 --n_vc=400 --n_ec=10 --decay=true
+srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/train_PC.py --lr=1e-6 --n_vc=400 --n_ec=10 --decay=true
