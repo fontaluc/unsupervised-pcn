@@ -67,7 +67,7 @@ class FCLayer(Layer):
         is_forward=False, 
         use_decay=False, 
         alpha=0.1, 
-        ema_alpha=0.01
+        ema_alpha=0.01,
     ):
         super().__init__(
             in_size, 

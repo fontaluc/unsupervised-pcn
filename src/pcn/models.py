@@ -6,7 +6,7 @@ import numpy as np
 import wandb
 
 class PCModel(nn.Module):
-    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False):
+    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False, use_decay=False):
         super().__init__()
         self.nodes = nodes
         self.mu_dt = mu_dt
@@ -24,6 +24,7 @@ class PCModel(nn.Module):
                 act_fn=_act_fn,
                 use_bias=use_bias,
                 kaiming_init=kaiming_init,
+                use_decay=use_decay
             )
             self.layers.append(layer)
         self.layers = nn.ModuleList(self.layers)
