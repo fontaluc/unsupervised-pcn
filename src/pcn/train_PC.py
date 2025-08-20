@@ -44,8 +44,7 @@ def main(cf):
         act_fn=cf.act_fn, 
         use_bias=cf.use_bias, 
         kaiming_init=cf.kaiming_init, 
-        use_decay=cf.decay,
-        use_norm=cf.norm
+        use_decay=cf.decay
     )
     
     if cf.schedule:
