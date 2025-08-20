@@ -39,7 +39,13 @@ def main(cf):
     )
 
     model = PCModel(
-        nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
+        nodes=cf.nodes, 
+        mu_dt=cf.mu_dt, 
+        act_fn=cf.act_fn, 
+        use_bias=cf.use_bias, 
+        kaiming_init=cf.kaiming_init, 
+        use_decay=cf.decay,
+        use_norm=cf.norm
     )
     
     if cf.schedule:
@@ -116,7 +122,7 @@ def main(cf):
         os.makedirs("models")
 
     # Save model parameters
-    torch.save(model.state_dict(), f"models/pcn-N={cf.N}-n_ec={cf.n_ec}-schedule={cf.schedule}.pt")
+    torch.save(model.state_dict(), f"models/pcn-n_vc={cf.n_vc}-n_ec={cf.n_ec}-schedule={cf.schedule}-decay={cf.decay}.pt")
 
 if __name__ == "__main__":
 
@@ -131,6 +137,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--schedule", type=bool, default=False, help="Enter scheduler use")
     parser.add_argument("--decay", type=bool, default=False, help="Enter decay use")
+    parser.add_argument("--grad_clip", type=float, default=None, help="Enter grad clip value")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -157,9 +164,9 @@ if __name__ == "__main__":
     cf.schedule = args.schedule
     cf.optim = "Adam"
     cf.lr = args.lr
-    cf.min_lr = 1e-6
+    cf.min_lr = 0
     cf.batch_scale = True
-    cf.grad_clip = None
+    cf.grad_clip = args.grad_clip
     cf.weight_decay = None
 
     # inference params
@@ -177,6 +184,6 @@ if __name__ == "__main__":
     cf.n_ec = args.n_ec
     cf.nodes = [cf.n_ec, cf.n_vc, 784]
     cf.act_fn = utils.Tanh()
-    cf.use_decay = args.decay
+    cf.decay = args.decay
 
     main(cf)
