@@ -19,9 +19,12 @@ def main(cf):
     g = torch.Generator()
     g.manual_seed(cf.seed)
 
-    dataset_train = torch.load('data/mnist_train.pt')
-    dataset_valid = torch.load('data/mnist_valid.pt')
-    dset_train = TensorDataset(dataset_train['images'][:cf.N], dataset_train['labels'][:cf.N])
+    data_name = 'mnist'
+    if cf.subset:
+        data_name += '_subset'
+    dataset_train = torch.load(f'data/{data_name}_train.pt')
+    dataset_valid = torch.load(f'data/{data_name}_valid.pt')
+    dset_train = TensorDataset(dataset_train['images'], dataset_train['labels'])
     dset_valid = TensorDataset(dataset_valid['images'], dataset_valid['labels'])
     train_loader = DataLoader(
         dset_train, 
@@ -130,7 +133,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--n_epochs", type=int, default=1000, help="Enter number of epochs")
     parser.add_argument("--lr", type=float, default=1e-4, help="Enter learning rate")
-    parser.add_argument("--N", type=int, default=10097, help="Enter training set size")
+    parser.add_argument("--subset", type=int, default=False, help="Enter whether to use only two classes")
     parser.add_argument("--n_vc", type=int, default=400, help="Enter size of VC layer")
     parser.add_argument("--n_ec", type=int, default=10, help="Enter size of EC layer")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
@@ -157,7 +160,7 @@ if __name__ == "__main__":
     cf.label_scale = None
     cf.normalize = True
     cf.batch_size = 64
-    cf.N = args.N
+    cf.subset = args.subset
 
     # optim params
     cf.schedule = args.schedule

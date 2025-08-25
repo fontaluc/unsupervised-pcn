@@ -258,9 +258,9 @@ class PCTrainer(object):
 
             # log gradients
             t = epoch * n_batches + batch_id
-            if log and t%log_freq == 0:
-                for l in range(self.model.n_layers):
-                    wandb.log({f'grad_{l}': wandb.Histogram(self.model.layers[l].grad['weights'].cpu().detach())})
+            # if log and t%log_freq == 0:
+            #     for l in range(self.model.n_layers):
+            #         wandb.log({f'grad_{l}': wandb.Histogram(self.model.layers[l].grad['weights'].cpu().detach())})
 
             for optimizer in self.optimizers:
                 optimizer.step(
@@ -268,6 +268,7 @@ class PCTrainer(object):
                     curr_batch=batch_id,
                     n_batches=n_batches,
                     batch_size=img_batch.size(0),
+                    log=log and t%log_freq == 0,
                 )
            
             # gather data for the current batch

@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-
+import wandb
 
 def get_optim(params, optim_id, lr, q_lr=None, batch_scale=True, grad_clip=None, weight_decay=None):
     if optim_id == "Adam":
@@ -90,7 +90,7 @@ class Adam(Optimizer):
         self.v_b = [torch.zeros_like(param.bias) for param in self._params]
         self.v_w = [torch.zeros_like(param.weights) for param in self._params]
 
-    def step(self, curr_epoch=None, curr_batch=None, n_batches=None, batch_size=None):
+    def step(self, curr_epoch=None, curr_batch=None, n_batches=None, batch_size=None, log=False):
         with torch.no_grad():
             t = (curr_epoch) * n_batches + curr_batch
 
@@ -100,6 +100,10 @@ class Adam(Optimizer):
                     self.scale_batch(param, batch_size)
                     self.clip_grads(param)
                     self.decay_weights(param)
+
+                    # Log clipped gradients
+                    if log:
+                        wandb.log({f'grad_{p}': wandb.Histogram(param.grad['weights'].cpu().detach())})
 
                     self.c_w[p] = self.beta_1 * self.c_w[p] + (1 - self.beta_1) * param.grad["weights"]
                     self.v_w[p] = self.beta_2 * self.v_w[p] + (1 - self.beta_2) * param.grad["weights"] ** 2
