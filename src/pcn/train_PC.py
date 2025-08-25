@@ -14,7 +14,7 @@ def main(cf):
     model_name = f"n_vc={cf.n_vc}-n_ec={cf.n_ec}-schedule={cf.schedule}-decay={cf.decay}-grad_clip={cf.grad_clip}"
     os.environ["WANDB__SERVICE_WAIT"] = "300" # sometimes wandb takes more than 30s (the default time limit) to start
     wandb.login()
-    wandb.init(entity="fontaluc-inria-org", project="unsupervised-pcn", config=cf, name=model_name)
+    wandb.init(project="unsupervised-pcn", config=cf, name=model_name)
     location = wandb.run.dir
 
     utils.seed(cf.seed)
