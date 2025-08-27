@@ -4,13 +4,14 @@ from pcn import utils
 
 class Layer(nn.Module):
     def __init__(
-        self, in_size, out_size, act_fn, use_bias=False
+        self, in_size, out_size, act_fn, use_bias=False, is_forward=False
     ):
         super().__init__()
         self.in_size = in_size
         self.out_size = out_size
         self.act_fn = act_fn
         self.use_bias = use_bias
+        self.is_forward = is_forward
         self.grad = {"weights": None, "bias": None}
 
         self._reset_params()
@@ -31,6 +32,7 @@ class FCLayer(Layer):
         out_size, 
         act_fn, 
         use_bias=False,
+        is_forward=False,
         use_decay=False, 
         alpha=0.1, 
         ema_alpha=0.01
@@ -39,7 +41,8 @@ class FCLayer(Layer):
             in_size, 
             out_size, 
             act_fn, 
-            use_bias)
+            use_bias,
+            is_forward)
         self.use_bias = use_bias
         self.inp = None
         self.use_decay = use_decay
