@@ -104,6 +104,8 @@ class Adam(Optimizer):
                     # Log clipped gradients
                     if log:
                         wandb.log({f'grad_{p}': wandb.Histogram(param.grad['weights'].cpu().detach())})
+                        if param.use_bias:
+                            wandb.log({f'grad_b_{p}': wandb.Histogram(param.grad['bias'].cpu().detach())})
 
                     self.c_w[p] = self.beta_1 * self.c_w[p] + (1 - self.beta_1) * param.grad["weights"]
                     self.v_w[p] = self.beta_2 * self.v_w[p] + (1 - self.beta_2) * param.grad["weights"] ** 2

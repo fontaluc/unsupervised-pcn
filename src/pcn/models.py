@@ -282,6 +282,8 @@ class PCTrainer(object):
                 for n in range(self.model.n_nodes - 1):
                     wandb.log({f'latents_{n}': wandb.Histogram(self.model.mus[n].cpu().detach())})
                     wandb.log({f'weights_{n}': wandb.Histogram(self.model.layers[n].weights.cpu().detach())})
+                    if self.model.layers[n].use_bias:
+                        wandb.log({f'bias_{n}': wandb.Histogram(self.model.layers[n].bias.cpu().detach())})
 
         # gather data for the full epoch
         train_errors = []

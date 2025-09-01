@@ -39,6 +39,23 @@ If you do not intend to change the code from the package, you can remove "-e".
 ```
 export WANDB_API_KEY=<your_api_key>
 ```
+The .bashrc file in your home directory should look like:
+```
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+        . /etc/bashrc
+fi
+
+# Uncomment the following line if you don't like systemctl's auto-paging feature:
+# export SYSTEMD_PAGER=
+
+# User specific aliases and functions
+module load tools/git/2.36.0
+export WANDB_API_KEY=<your_api_key>
+```
+We are loading git in the .bashrc file so that we don't need to load it every time we log on plafrim. 
 * Apply changes
 ```
 source ~/.bashrc
@@ -84,6 +101,11 @@ module load modulename
 where modulename is tools/git/2.36.0 for example. Apply changes with  
 ```
 source ~/.bashrc
+```
+* Create python project in /beegfs/username/ in plafrim where there is more storage. 
+* List all files including those starting with .
+```
+ls -a
 ```
 
 ## References
