@@ -41,17 +41,8 @@ class FCLayer(Layer):
             in_size, 
             out_size, 
             act_fn, 
-<<<<<<< HEAD
             use_bias,
             is_forward)
-=======
-            use_bias, 
-            kaiming_init, 
-            use_decay, 
-            alpha, 
-            ema_alpha, 
-            is_forward=is_forward)
->>>>>>> parent of 87d9022 (Remove unused param in super init)
         self.use_bias = use_bias
         self.inp = None
         self.use_decay = use_decay
