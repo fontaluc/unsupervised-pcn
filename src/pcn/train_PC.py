@@ -133,7 +133,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Script that trains the PC model on a training set of size N"
     )
-    parser.add_argument("--n_epochs", type=int, default=16000, help="Enter number of epochs")
+    parser.add_argument("--n_epochs", type=int, default=4000, help="Enter number of epochs")
     parser.add_argument("--lr", type=float, default=1e-6, help="Enter learning rate")
     parser.add_argument("--subset", type=int, default=False, help="Enter whether to use only two classes")
     parser.add_argument("--n_vc", type=int, default=400, help="Enter size of VC layer")
@@ -142,6 +142,7 @@ if __name__ == "__main__":
     parser.add_argument("--schedule", type=bool, default=False, help="Enter scheduler use")
     parser.add_argument("--decay", type=bool, default=False, help="Enter decay use")
     parser.add_argument("--grad_clip", type=float, default=None, help="Enter grad clip value")
+    parser.add_argument("--kaiming", type=bool, default=False, help="Enter use of Kaiming initialization")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -183,7 +184,7 @@ if __name__ == "__main__":
 
     # model params
     cf.use_bias = True
-    cf.kaiming_init = False
+    cf.kaiming_init = args.kaiming
     cf.n_vc = args.n_vc
     cf.n_ec = args.n_ec
     cf.nodes = [cf.n_ec, cf.n_vc, 784]
