@@ -6,7 +6,7 @@ import numpy as np
 import wandb
 
 class PCModel(nn.Module):
-    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, use_decay=False):
+    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False, use_decay=False):
         super().__init__()
         self.nodes = nodes
         self.mu_dt = mu_dt
@@ -16,7 +16,6 @@ class PCModel(nn.Module):
 
         self.layers = []
         for l in range(self.n_layers):
-            # Input layer has an identity activation function so no bias
             _act_fn = utils.Linear() if (l == self.n_layers - 1) else act_fn
             _use_bias = False if (l == self.n_layers - 1) else use_bias
 
@@ -25,6 +24,7 @@ class PCModel(nn.Module):
                 out_size=nodes[l + 1],
                 act_fn=_act_fn,
                 use_bias=_use_bias,
+                kaiming_init=kaiming_init,
                 use_decay=use_decay
             )
             self.layers.append(layer)

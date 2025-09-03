@@ -47,7 +47,8 @@ def main(cf):
         nodes=cf.nodes, 
         mu_dt=cf.mu_dt, 
         act_fn=cf.act_fn, 
-        use_bias=cf.use_bias,
+        use_bias=cf.use_bias, 
+        kaiming_init=cf.kaiming_init, 
         use_decay=cf.decay
     )
     
@@ -182,6 +183,7 @@ if __name__ == "__main__":
 
     # model params
     cf.use_bias = True
+    cf.kaiming_init = False
     cf.n_vc = args.n_vc
     cf.n_ec = args.n_ec
     cf.nodes = [cf.n_ec, cf.n_vc, 784]

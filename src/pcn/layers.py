@@ -5,11 +5,7 @@ import math
 
 class Layer(nn.Module):
     def __init__(
-<<<<<<< HEAD
-        self, in_size, out_size, act_fn, use_bias=False, is_forward=False
-=======
         self, in_size, out_size, act_fn, use_bias=False, kaiming_init=False, is_forward=False
->>>>>>> parent of fe63cdf (Correct bias and clean code)
     ):
         super().__init__()
         self.in_size = in_size
@@ -17,13 +13,10 @@ class Layer(nn.Module):
         self.act_fn = act_fn
         self.use_bias = use_bias
         self.is_forward = is_forward
-<<<<<<< HEAD
-=======
         self.kaiming_init = kaiming_init
 
         self.weights = None
         self.bias = None
->>>>>>> parent of fe63cdf (Correct bias and clean code)
         self.grad = {"weights": None, "bias": None}
 
         if kaiming_init:
@@ -69,14 +62,9 @@ class FCLayer(Layer):
         in_size, 
         out_size, 
         act_fn, 
-<<<<<<< HEAD
-        use_bias=False,
-        is_forward=False,
-=======
         use_bias=False, 
         kaiming_init=False, 
         is_forward=False, 
->>>>>>> parent of fe63cdf (Correct bias and clean code)
         use_decay=False, 
         alpha=0.1, 
         ema_alpha=0.01,
@@ -85,14 +73,9 @@ class FCLayer(Layer):
             in_size, 
             out_size, 
             act_fn, 
-<<<<<<< HEAD
-            use_bias,
-            is_forward)
-=======
             use_bias, 
             kaiming_init,
             is_forward=is_forward)
->>>>>>> parent of fe63cdf (Correct bias and clean code)
         self.use_bias = use_bias
         self.inp = None
         self.use_decay = use_decay
@@ -102,18 +85,16 @@ class FCLayer(Layer):
 
     def forward(self, inp):
         self.inp = inp.clone()
-        out = self.act_fn(torch.matmul(self.inp, self.weights))
-        if self.use_bias:
-            out = out + self.bias
+        out = self.act_fn(torch.matmul(self.inp, self.weights) + self.bias)
         return out
 
     def backward(self, err):
-        fn_deriv = self.act_fn.deriv(torch.matmul(self.inp, self.weights))
+        fn_deriv = self.act_fn.deriv(torch.matmul(self.inp, self.weights) + self.bias)
         out = torch.matmul(err * fn_deriv, self.weights.T)
         return out
 
     def update_gradient(self, err):
-        fn_deriv = self.act_fn.deriv(torch.matmul(self.inp, self.weights))
+        fn_deriv = self.act_fn.deriv(torch.matmul(self.inp, self.weights) + self.bias)
         delta = torch.matmul(self.inp.T, err * fn_deriv)        
         if self.use_decay:
             activity = torch.mean(self.inp ** 2)
@@ -122,5 +103,5 @@ class FCLayer(Layer):
                 delta *= self.alpha
         self.grad["weights"] = delta
         if self.use_bias:
-            self.grad["bias"] = torch.sum(err, axis=0)
+            self.grad["bias"] = torch.sum(err * fn_deriv, axis=0)
     
