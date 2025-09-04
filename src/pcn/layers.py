@@ -17,7 +17,7 @@ class Layer(nn.Module):
 
         self.weights = nn.Parameter(utils.set_tensor(torch.empty((self.in_size, self.out_size))))
         self.bias = nn.Parameter(utils.set_tensor(torch.zeros((self.out_size))))
-        self.grad = {"weights": None, "bias": None}
+        self._reset_grad()
 
         if kaiming_init:
             self._reset_params_kaiming()
