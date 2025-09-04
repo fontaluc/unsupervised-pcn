@@ -68,9 +68,11 @@ class FCLayer(Layer):
         self.alpha = alpha
         self.ema_alpha = ema_alpha
         self.theta_meta = 0
+        self.inp = None
 
     def forward(self, inp):
-        out = self.act_fn(torch.matmul(inp, self.weights) + self.bias)
+        self.inp = inp.clone()
+        out = self.act_fn(torch.matmul(self.inp, self.weights) + self.bias)
         return out
 
     def backward(self, err):
