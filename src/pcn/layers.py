@@ -34,7 +34,7 @@ class Layer(nn.Module):
         self.grad = {"weights": None, "bias": None}
 
     def _reset_params(self):
-        self.weights = self.weights.normal_(mean=0.0, std=0.05)
+        nn.init.normal_(self.weights, mean=0.0, std=0.05)
 
     def _reset_params_kaiming(self):        
         nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))         
