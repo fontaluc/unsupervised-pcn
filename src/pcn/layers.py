@@ -15,17 +15,14 @@ class Layer(nn.Module):
         self.is_forward = is_forward
         self.kaiming_init = kaiming_init
 
-        self.weights = None
-        self.bias = None
+        self.weights = nn.Parameter(utils.set_tensor(torch.empty((self.in_size, self.out_size))))
+        self.bias = nn.Parameter(utils.set_tensor(torch.zeros((self.out_size))))
         self.grad = {"weights": None, "bias": None}
 
         if kaiming_init:
             self._reset_params_kaiming()
         else:
             self._reset_params()
-
-    def forward(self, *args, **kwargs):
-        raise NotImplementedError
 
     def reset(self):
         if self.kaiming_init:
@@ -37,24 +34,14 @@ class Layer(nn.Module):
         self.grad = {"weights": None, "bias": None}
 
     def _reset_params(self):
-        weights = torch.empty((self.in_size, self.out_size)).normal_(mean=0.0, std=0.05)
-        bias = torch.zeros((self.out_size))
-        self.weights = nn.Parameter(utils.set_tensor(weights))
-        self.bias = nn.Parameter(utils.set_tensor(bias))
+        self.weights = self.weights.normal_(mean=0.0, std=0.05)
 
-    def _reset_params_kaiming(self):
-        self.weights = nn.Parameter(utils.set_tensor(torch.empty((self.in_size, self.out_size))))
-        self.bias = nn.Parameter(utils.set_tensor(torch.zeros((self.out_size))))
-        if isinstance(self.act_fn, utils.Linear):
-            nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
-        elif isinstance(self.act_fn, utils.Tanh):
-            nn.init.kaiming_normal_(self.weights)
-        elif isinstance(self.act_fn, utils.ReLU):
-            nn.init.kaiming_normal_(self.weights)
-
-        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weights)
-        bound = 1 / math.sqrt(fan_in)
-        nn.init.uniform_(self.bias, -bound, bound)
+    def _reset_params_kaiming(self):        
+        nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))         
+        if self.use_bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weights)
+            bound = 1 / math.sqrt(fan_in)
+            nn.init.uniform_(self.bias, -bound, bound)
 
 class FCLayer(Layer):
     def __init__(
@@ -77,15 +64,13 @@ class FCLayer(Layer):
             kaiming_init,
             is_forward=is_forward)
         self.use_bias = use_bias
-        self.inp = None
         self.use_decay = use_decay
         self.alpha = alpha
         self.ema_alpha = ema_alpha
         self.theta_meta = 0
 
     def forward(self, inp):
-        self.inp = inp.clone()
-        out = self.act_fn(torch.matmul(self.inp, self.weights) + self.bias)
+        out = self.act_fn(torch.matmul(inp, self.weights) + self.bias)
         return out
 
     def backward(self, err):
