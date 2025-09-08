@@ -176,7 +176,7 @@ if __name__ == "__main__":
     cf.threshold = 2e-4
     cf.low_threshold = 0.2
     cf.patience = 10
-    cf.gamma = 0.999
+    cf.gamma = 0.99
 
     # dataset params
     cf.train_size = None
