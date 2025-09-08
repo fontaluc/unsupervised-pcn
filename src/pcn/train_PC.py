@@ -52,7 +52,7 @@ def main(cf):
         use_decay=cf.decay
     )
     
-    if cf.schedule:
+    if cf.scheduler == "plateau":
         optimizers = [
             optim.get_optim(
             model.layers,
@@ -68,6 +68,22 @@ def main(cf):
             optim.ReduceLROnPlateau(optimizers[l], cf.factor, cf.patience, cf.threshold, cf.low_threshold, cf.min_lr) 
             for l in range(model.n_layers)
         ]
+    
+    elif cf.scheduler == "exponential":
+        optimizers = [
+            optim.get_optim(
+            model.layers,
+            cf.optim,
+            cf.lr,
+            batch_scale=cf.batch_scale,
+            grad_clip=cf.grad_clip,
+            weight_decay=cf.weight_decay,
+        )
+        ]
+        schedulers = [
+            optim.ExponentialLR(optimizers[0], cf.gamma)
+        ]
+
     else:
         optimizers = [
             optim.get_optim(
@@ -139,7 +155,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_vc", type=int, default=400, help="Enter size of VC layer")
     parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
-    parser.add_argument("--schedule", type=bool, default=False, help="Enter scheduler use")
+    parser.add_argument("--scheduler", choices=["plateau", "exponential"], default=None, help="Enter scheduler")
     parser.add_argument("--decay", type=bool, default=False, help="Enter decay use")
     parser.add_argument("--grad_clip", type=float, default=None, help="Enter grad clip value")
     parser.add_argument("--kaiming", type=bool, default=False, help="Enter use of Kaiming initialization")
@@ -156,6 +172,7 @@ if __name__ == "__main__":
     cf.threshold = 2e-4
     cf.low_threshold = 0.2
     cf.patience = 10
+    cf.gamma = 0.999
 
     # dataset params
     cf.train_size = None
@@ -166,7 +183,7 @@ if __name__ == "__main__":
     cf.subset = args.subset
 
     # optim params
-    cf.schedule = args.schedule
+    cf.scheduler = args.scheduler
     cf.optim = "Adam"
     cf.lr = args.lr
     cf.min_lr = 0

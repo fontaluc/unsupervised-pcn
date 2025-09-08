@@ -122,11 +122,10 @@ class Adam(Optimizer):
 
                     param._reset_grad()
 
-
 class LRScheduler:
     def __init__(self, optimizer: Optimizer):
         self.optimizer = optimizer
-    
+
 class ReduceLROnPlateau(LRScheduler):
     """Reduce learning rate when a metric has stopped improving if it is sufficiently low.
 
@@ -213,3 +212,22 @@ class ReduceLROnPlateau(LRScheduler):
     
     def is_low(self, a, max):
         return a < self.low_threshold*max
+    
+class ExponentialLR(LRScheduler):
+    """Decays the learning rate by gamma every epoch.
+
+    Args:
+        optimizer (Optimizer): Wrapped optimizer.
+        gamma (float): Multiplicative factor of learning rate decay.
+    """
+
+    def __init__(
+        self,
+        optimizer: Optimizer,
+        gamma: float
+    ):  
+        self.optimizer = optimizer
+        self.gamma = gamma
+
+    def step(self):
+        self.optimizer.lr = self.optimizer.lr * self.gamma
