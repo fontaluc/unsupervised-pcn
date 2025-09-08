@@ -107,7 +107,7 @@ def main(cf):
             for n in range(model.n_nodes):
                 wandb.log({f'errors_{n}_train': train_errors[n], 'epoch': epoch})
 
-            if cf.schedule:
+            if cf.scheduler == 'plateau':
                 for l in range(model.n_layers):
                     metrics = train_errors[l+1]
                     if epoch > 0:                
@@ -116,7 +116,11 @@ def main(cf):
                         wandb.log({f'low_ratio_{l}': low_ratio, 'epoch': epoch})
                     schedulers[l].step(metrics)
                     wandb.log({f'scheduler_count_{l}': schedulers[l].num_bad_epochs, 'epoch': epoch})
-                    wandb.log({f'lr_{l}': optimizers[l].lr, 'epoch': epoch})        
+                    wandb.log({f'lr_{l}': optimizers[l].lr, 'epoch': epoch}) 
+            
+            elif cf.scheduler == 'exponential':
+                schedulers[0].step()
+                wandb.log({f'lr': optimizers[0].lr, 'epoch': epoch})                           
 
             img_batch, label_batch = next(iter(valid_loader))            
             valid_errors = trainer.eval(
@@ -127,7 +131,7 @@ def main(cf):
 
             plotting.log_mnist_plots(model, img_batch, label_batch, epoch) 
 
-            if cf.schedule:
+            if cf.scheduler == 'plateau':
                 if utils.early_stop(optimizers, cf.lr):
                     break
 
