@@ -13,7 +13,7 @@
 ### -- Specify the output and error file. %A_%a is the job-id --
 ### -- -o and -e mean append, -oo and -eo mean overwrite --
 #SBATCH -o /beegfs/lfontain/unsupervised-pcn/outputs/logs/tune_second_layer_%A_%a.out
-#SBATCH -e /beegfs/lfontain/unsupervised-pcn/outputs/logs/tune_second_layercd .._%A_%a.err
+#SBATCH -e /beegfs/lfontain/unsupervised-pcn/outputs/logs/tune_second_layer_%A_%a.err
 # -- end of Slurm options --
 
 
