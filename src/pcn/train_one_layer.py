@@ -14,7 +14,7 @@ def main(cf):
 
     dataset_train = torch.load('data/mnist_train.pt')
     dataset_valid = torch.load('data/mnist_valid.pt')
-    dset_train = TensorDataset(dataset_train['images'][:cf.N], dataset_train['labels'][:cf.N])
+    dset_train = TensorDataset(dataset_train['images'], dataset_train['labels'])
     dset_valid = TensorDataset(dataset_valid['images'], dataset_valid['labels'])
     train_loader = DataLoader(
         dset_train, 
@@ -114,7 +114,6 @@ if __name__ == "__main__":
     cf.label_scale = None
     cf.normalize = True
     cf.batch_size = 64
-    cf.N = 10097
 
     # optim params
     cf.schedule = True
