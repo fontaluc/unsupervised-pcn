@@ -304,7 +304,7 @@ class PCTrainer(object):
             valid_errors.append(errors.mean().item())
         return valid_errors
     
-    def test(self, data_loader, n_iters, fixed_preds):
+    def test(self, data_loader, n_iters, fixed_preds) -> float:
         """
         Return RMSE between original and reconstructed images averaged over the testing dataset
         """
@@ -320,4 +320,4 @@ class PCTrainer(object):
         # gather data for the full epoch
         test_error = np.mean(test_epoch_errors)
 
-        return test_error
+        return float(test_error)
