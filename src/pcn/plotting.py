@@ -23,30 +23,42 @@ def plot_samples(ax, x, color=False):
     ax.imshow(x_grid)
     ax.axis('off')
 
-def plot_2d_latents(ax, z, y):
+def plot_2d_latents(ax, z, y, markers='o'):
     z = z.to('cpu')
     y = y.to('cpu')
     palette = sns.color_palette()
-    colors = [palette[int(l)] for l in y]
-    ax.scatter(z[:, 0], z[:, 1], color=colors)
+    colors = np.array([palette[int(l)] for l in y])
+    alphas = {'*': 1, 'o': 0.1}
+    if len(np.unique(markers)) > 1:
+        for marker in np.unique(markers):
+            indices = np.where(np.array(markers) == marker)[0]
+            ax.scatter(z[indices, 0], z[indices, 1], c=colors[indices], marker=marker, alpha = alphas[marker])
+    else:
+        ax.scatter(z[:, 0], z[:, 1], c=colors)
     ax.set_aspect('equal', 'box')
 
-def plot_latents(ax, z, y):
+def plot_latents(ax, z, y, markers='o'):
     z = z.to('cpu')
     y = y.to('cpu')
     palette = sns.color_palette()
-    colors = [palette[int(l)] for l in y]
-    z = TSNE(n_components=2).fit_transform(z) # n_samples > 30 (perplexity)
-    ax.scatter(z[:, 0], z[:, 1], color=colors)
+    colors = np.array([palette[int(l)] for l in y])
+    alphas = {'*': 1, 'o': 0.1}
+    z = TSNE(n_components=2).fit_transform(z) # n_samples > 30 (perplexit
+    if len(np.unique(markers)) > 1:
+        for marker in np.unique(markers):
+            indices = np.where(np.array(markers) == marker)[0]
+            ax.scatter(z[indices, 0], z[indices, 1], c=colors[indices], marker=marker, alpha = alphas[marker])
+    else:
+        ax.scatter(z[:, 0], z[:, 1], c=colors)
 
-def visualize_latent(ax, z, y):    
+def visualize_latent(ax, z, y, markers='o'):    
     try:
         if z.shape[1] == 2:
             ax.set_title('Latent Samples')
-            plot_2d_latents(ax, z, y)
+            plot_2d_latents(ax, z, y, markers)
         else:
             ax.set_title('Latent Samples (t-SNE)')
-            plot_latents(ax, z, y)
+            plot_latents(ax, z, y, markers)
     except Exception as e:
         print(f"Could not generate the plot of the latent samples because of exception")
         print(e)
@@ -172,10 +184,19 @@ def make_pc_plots(model, x, y, training_errors, validation_errors, weights, colo
     except Exception as e:
         print(f"Warning: An unexpected error occurred while removing '{tmp_img}': {e}")
 
-def plot_levels(model, dataloader, n_iters, step_tolerance, init_std, fixed_preds):
+def plot_levels(activities, labels, markers='o'):    
+    n_nodes = len(activities)
+    fig, axes = plt.subplots(n_nodes, 1, figsize=(5, 5*n_nodes), constrained_layout=True)
+    for n in range(n_nodes):
+        axes[n].set_xlabel(f'Level {n_nodes - n}')
+        y = torch.Tensor(labels)
+        z = torch.Tensor(activities[n])
+        visualize_latent(axes[n], z, y, markers)
+    return fig
+
+def infer_latents(model, dataloader, n_iters, step_tolerance, init_std, fixed_preds):
     activities = [[] for _ in range(model.n_nodes)]
     labels = []
-    
     # Append neuron activities and labels of all batches
     with torch.no_grad():
         for x, y in dataloader:
@@ -186,12 +207,36 @@ def plot_levels(model, dataloader, n_iters, step_tolerance, init_std, fixed_pred
             for n in range(model.n_nodes):
                 activities[n] += model.mus[n].to('cpu').tolist()
             labels += y.tolist()
+    return activities, labels
 
-    fig, axes = plt.subplots(model.n_nodes, 1, figsize=(5, 5*model.n_nodes), constrained_layout=True)
+def visualize_samples(model, cf, activities_test, labels_test, ec_batch, labels):
+    activities = [[] for _ in range(model.n_nodes)]
+    K = len(ec_batch)
+    sample_size = K*cf.batch_size
+    markers = ['*' for _ in range(sample_size)] + ['o' for _ in range(len(labels_test))]
+    fig1, axes = plt.subplots(1, K, figsize = (5*K, 5))
+    for k in range(K):
+        label = int(labels[k*cf.batch_size])
+        with torch.no_grad():
+            model.replay_batch(
+                ec_batch[k],
+                cf.n_max_iters,
+                step_tolerance=cf.step_tolerance,
+                init_std=cf.init_std,
+                fixed_preds=cf.fixed_preds_test
+            )
+
+        axes[k].set_title(f'Class {label}')
+        plot_samples(axes[k], model.preds[-1], color=False)
+        
+        for n in range(model.n_nodes -1):
+            activities[n] += model.mus[n].to('cpu').tolist()
+        activities[-1] += model.preds[-1].to('cpu').tolist()
+
     for n in range(model.n_nodes):
-        axes[n].set_xlabel(f'Level {model.n_nodes - n}')
-        z = torch.Tensor(activities[n])
-        y = torch.Tensor(labels)
-        visualize_latent(axes[n], z, y)
+        activities[n] += activities_test[n]
 
-    return fig
+    labels += labels_test
+    
+    fig2 = plot_levels(activities, labels, markers)
+    return fig1, fig2
