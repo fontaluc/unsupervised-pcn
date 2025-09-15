@@ -13,18 +13,9 @@ def main(cf):
     g.manual_seed(cf.seed)
 
     dataset_train = torch.load('data/mnist_train.pt')
-    dataset_valid = torch.load('data/mnist_valid.pt')
     dset_train = TensorDataset(dataset_train['images'], dataset_train['labels'])
-    dset_valid = TensorDataset(dataset_valid['images'], dataset_valid['labels'])
     train_loader = DataLoader(
         dset_train, 
-        batch_size=cf.batch_size, 
-        shuffle=True, 
-        worker_init_fn=utils.seed_worker, 
-        generator=g
-    )
-    valid_loader  = DataLoader(
-        dset_valid, 
         batch_size=cf.batch_size, 
         shuffle=True, 
         worker_init_fn=utils.seed_worker, 
@@ -81,11 +72,12 @@ def main(cf):
                 if utils.early_stop(optimizers, cf.lr):
                     break 
 
-    # Evaluate validation error
-    valid_error = trainer.test(valid_loader, cf.n_max_iters, cf.fixed_preds_test)
-    mode = 'a' if os.path.exists("outputs/valid_error.txt") else 'w'
-    with open("outputs/valid_error.txt", mode) as f:
-        f.write(f"{cf.n_hidden}, {float(valid_error)} \n") # convert np.float64 to float for writing
+    # Create models folder if it doesn't exist
+    if not os.path.exists("models"):
+        os.makedirs("models")
+
+    # Save model parameters
+    torch.save(model.state_dict(), f"models/pcn-n_vc={cf.n_hidden}.pt")
 
 if __name__ == "__main__":
 
