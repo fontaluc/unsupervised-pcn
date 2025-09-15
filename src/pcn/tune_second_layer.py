@@ -45,25 +45,25 @@ def main(cf):
         os.makedirs(f"outputs/{model_name}")
 
     ## Recall performance
-    img_batch, label_batch = next(iter(train_loader))
-    n_cut = img_batch.size(1)//2
-    # Quantitatively on the whole training set: average RMSE between recalled and original images
-    recall_rmse = 0 
-    with torch.no_grad():
-        for img_batch, label_batch in tqdm(train_loader):
-            img_batch_half = utils.mask_image(img_batch, n_cut)
-            img_batch_half = utils.set_tensor(img_batch_half)
-            model.recall_batch(
-                img_batch_half, 
-                cf.n_max_iters, 
-                n_cut=n_cut, 
-                step_tolerance=cf.step_tolerance,
-                init_std=cf.init_std,
-                fixed_preds=cf.fixed_preds_test
-            )
-            img_batch = utils.set_tensor(img_batch)
-            recall_rmse += torch.sum(utils.rmse(img_batch, model.mus[-1])).item()
-    recall_rmse = recall_rmse/N
+    # img_batch, label_batch = next(iter(train_loader))
+    # n_cut = img_batch.size(1)//2
+    # # Quantitatively on the whole training set: average RMSE between recalled and original images
+    # recall_rmse = 0 
+    # with torch.no_grad():
+    #     for img_batch, label_batch in tqdm(train_loader):
+    #         img_batch_half = utils.mask_image(img_batch, n_cut)
+    #         img_batch_half = utils.set_tensor(img_batch_half)
+    #         model.recall_batch(
+    #             img_batch_half, 
+    #             cf.n_max_iters, 
+    #             n_cut=n_cut, 
+    #             step_tolerance=cf.step_tolerance,
+    #             init_std=cf.init_std,
+    #             fixed_preds=cf.fixed_preds_test
+    #         )
+    #         img_batch = utils.set_tensor(img_batch)
+    #         recall_rmse += torch.sum(utils.rmse(img_batch, model.mus[-1])).item()
+    # recall_rmse = recall_rmse/N
 
     ## Generalization performance
     trainer = PCTrainer(model)
@@ -120,7 +120,7 @@ def main(cf):
 
     mode = 'a' if os.path.exists("outputs/tune_second_layer.txt") else 'w'
     with open("outputs/tune_second_layer.txt", mode) as f:
-        f.write(f"{cf.n_ec}, {recall_rmse}, {test_rmse}, {valid_acc} \n")
+        f.write(f"{cf.n_ec}, {test_rmse}, {valid_acc} \n")
 
 if __name__ == "__main__":
     
