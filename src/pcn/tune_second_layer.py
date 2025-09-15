@@ -120,7 +120,7 @@ def main(cf):
 
     mode = 'a' if os.path.exists("outputs/tune_second_layer.txt") else 'w'
     with open("outputs/tune_second_layer.txt", mode) as f:
-        f.write(f"{cf.n_ec}, {test_rmse}, {valid_acc} \n")
+        f.write(f"{cf.n_ec}, {replay_rmse}, {test_rmse}, {valid_acc} \n")
 
 if __name__ == "__main__":
     
