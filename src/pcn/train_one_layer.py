@@ -4,7 +4,10 @@ from torch.utils.data import DataLoader, TensorDataset
 from pcn import optim
 import os
 from pcn import utils
+from pcn import plotting
 import argparse
+import wandb
+import shutil
     
 def main(cf):
 
@@ -12,10 +15,25 @@ def main(cf):
     g = torch.Generator()
     g.manual_seed(cf.seed)
 
-    dataset_train = torch.load('data/mnist_train.pt')
+    model_name = f"n_vc={cf.n_hidden}"
+    os.environ["WANDB__SERVICE_WAIT"] = "300" # sometimes wandb takes more than 30s (the default time limit) to start
+    wandb.login()
+    wandb.init(project="unsupervised-pcn", config=cf, name=model_name)
+    location = wandb.run.dir
+
+    dataset_train = torch.load(f'data/mnist_train.pt')
+    dataset_valid = torch.load(f'data/mnist_valid.pt')
     dset_train = TensorDataset(dataset_train['images'], dataset_train['labels'])
+    dset_valid = TensorDataset(dataset_valid['images'], dataset_valid['labels'])
     train_loader = DataLoader(
         dset_train, 
+        batch_size=cf.batch_size, 
+        shuffle=True, 
+        worker_init_fn=utils.seed_worker, 
+        generator=g
+    )
+    valid_loader  = DataLoader(
+        dset_valid, 
         batch_size=cf.batch_size, 
         shuffle=True, 
         worker_init_fn=utils.seed_worker, 
@@ -62,22 +80,45 @@ def main(cf):
             train_errors = trainer.train(
                 train_loader, epoch, cf.n_train_iters, cf.fixed_preds_train, cf.log
             )
+            for n in range(model.n_nodes):
+                wandb.log({f'errors_{n}_train': train_errors[n], 'epoch': epoch})
 
             if cf.schedule:
                 for l in range(model.n_layers):
                     metrics = train_errors[l+1]
-                    schedulers[l].step(metrics)       
+                    if epoch > 0:                
+                        better_ratio, low_ratio = utils.compute_ratios(metrics, schedulers[l])
+                        wandb.log({f'better_ratio_{l}': better_ratio, 'epoch': epoch})
+                        wandb.log({f'low_ratio_{l}': low_ratio, 'epoch': epoch})
+                    schedulers[l].step(metrics)
+                    wandb.log({f'scheduler_count_{l}': schedulers[l].num_bad_epochs, 'epoch': epoch})
+                    wandb.log({f'lr_{l}': optimizers[l].lr, 'epoch': epoch})    
+
+            img_batch, label_batch = next(iter(valid_loader))            
+            valid_errors = trainer.eval(
+                img_batch,cf.n_test_iters, cf.fixed_preds_test
+            )
+            for n in range(model.n_nodes):
+                wandb.log({f'errors_{n}_valid': valid_errors[n], 'epoch': epoch})
+
+            plotting.log_mnist_plots(model, img_batch, label_batch, epoch) 
 
             if cf.schedule:
                 if utils.early_stop(optimizers, cf.lr):
                     break 
+
+    wandb.finish()
+
+    # Remove local media directory
+    path = os.path.join(location, 'media')
+    shutil.rmtree(path) 
 
     # Create models folder if it doesn't exist
     if not os.path.exists("models"):
         os.makedirs("models")
 
     # Save model parameters
-    torch.save(model.state_dict(), f"models/pcn-n_vc={cf.n_hidden}.pt")
+    torch.save(model.state_dict(), f"models/pcn-{model_name}.pt")
 
 if __name__ == "__main__":
 
