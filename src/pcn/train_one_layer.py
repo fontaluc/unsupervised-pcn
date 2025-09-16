@@ -96,7 +96,7 @@ def main(cf):
 
             img_batch, label_batch = next(iter(valid_loader))            
             valid_errors = trainer.eval(
-                img_batch,cf.n_test_iters, cf.fixed_preds_test
+                img_batch, cf.n_test_iters, cf.fixed_preds_test
             )
             for n in range(model.n_nodes):
                 wandb.log({f'errors_{n}_valid': valid_errors[n], 'epoch': epoch})
@@ -160,6 +160,7 @@ if __name__ == "__main__":
     # inference params
     cf.mu_dt = 0.01
     cf.n_train_iters = 50
+    cf.n_test_iters = 200
     cf.n_max_iters = 10000
     cf.init_std = 0.01
     cf.fixed_preds_train = False
