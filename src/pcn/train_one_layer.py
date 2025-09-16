@@ -126,6 +126,8 @@ if __name__ == "__main__":
         description="Script that trains a PCN with one hidden layer."
     )
     parser.add_argument("--n_hidden", type=int, default=100, help="Enter size of hidden layer")
+    parser.add_argument("--n_epochs", type=int, default=200, help="Enter number of epochs")
+    parser.add_argument("--schedule", type=bool, default=False, help="Enter use of scheduler")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     args = parser.parse_args()
 
@@ -134,7 +136,7 @@ if __name__ == "__main__":
 
     # experiment params
     cf.seed = args.seed
-    cf.n_epochs = 1000
+    cf.n_epochs = args.n_epochs
     cf.log = False
     cf.factor = 0.5
     cf.threshold = 2e-4
@@ -149,7 +151,7 @@ if __name__ == "__main__":
     cf.batch_size = 64
 
     # optim params
-    cf.schedule = True
+    cf.schedule = args.schedule
     cf.optim = "Adam"
     cf.lr = 1e-4
     cf.min_lr = 1e-6
