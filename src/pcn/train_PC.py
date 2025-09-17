@@ -11,7 +11,7 @@ import argparse
     
 def main(cf):
 
-    model_name = f"n_vc={cf.n_vc}-n_ec={cf.n_ec}-scheduler={cf.scheduler}-decay={cf.decay}-grad_clip={cf.grad_clip}-kaiming={cf.kaiming_init}"
+    model_name = f"n_vc={cf.n_vc}-n_ec={cf.n_ec}"
     os.environ["WANDB__SERVICE_WAIT"] = "300" # sometimes wandb takes more than 30s (the default time limit) to start
     wandb.login()
     wandb.init(project="unsupervised-pcn", config=cf, name=model_name)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_epochs", type=int, default=4000, help="Enter number of epochs")
     parser.add_argument("--lr", type=float, default=1e-6, help="Enter learning rate")
     parser.add_argument("--subset", type=int, default=False, help="Enter whether to use only two classes")
-    parser.add_argument("--n_vc", type=int, default=400, help="Enter size of VC layer")
+    parser.add_argument("--n_vc", type=int, default=450, help="Enter size of VC layer")
     parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--scheduler", choices=["plateau", "exponential"], default=None, help="Enter scheduler")

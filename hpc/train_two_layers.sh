@@ -5,7 +5,7 @@
 ### -- set the job Name --
 #SBATCH -J train_one_layer
 ### -- set the job array --
-#SBATCH --array=1-5
+#SBATCH --array=1-10
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
@@ -25,6 +25,6 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-N_hidden=(50 40 30 20 10)
+N_hidden=(100 90 80 70 60 50 40 30 20 10)
 n_hidden=${N_hidden[$SLURM_ARRAY_TASK_ID - 1]}
 srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/train_PC.py --schedule=exponential --lr=1e-5 --n_epochs=2000 --n_ec=$n_hidden
