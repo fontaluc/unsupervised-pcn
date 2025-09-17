@@ -3,7 +3,7 @@
 ### -- set the job Name --
 #SBATCH -J tune_first_layer
 ### -- set the job array --
-#SBATCH --array=1-4
+#SBATCH --array=1-12
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- set walltime limit: j-h:m:s
@@ -21,6 +21,6 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-N_hidden=(350 400 550 600)
+N_hidden=(600 550 500 450 400 350 300 250 200 150 100 50)
 n_hidden=${N_hidden[$SLURM_ARRAY_TASK_ID - 1]}
 srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/eval_one_layer.py --n_hidden=$n_hidden
