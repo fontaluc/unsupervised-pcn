@@ -5,7 +5,7 @@
 ### -- set the job Name --
 #SBATCH -J tune_second_layer
 ### -- set the job array --
-#SBATCH --array=1-5
+#SBATCH --array=1-10
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- set walltime limit: j-h:m:s
@@ -23,6 +23,6 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-N_hidden=(50 40 30 20 10)
+N_hidden=(100 90 80 70 60 50 40 30 20 10)
 n_hidden=${N_hidden[$SLURM_ARRAY_TASK_ID - 1]}
 srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/tune_second_layer.py --n_ec=$n_hidden
