@@ -24,10 +24,10 @@ def main(cf):
     )
     N = len(dataset_train)
 
-    dataset_test = torch.load('data/mnist_test.pt')
-    dset_test = TensorDataset(dataset_test['images'], dataset_test['labels'])
-    test_loader = DataLoader(
-        dset_test, 
+    dataset_valid = torch.load('data/mnist_valid.pt')
+    dset_valid = TensorDataset(dataset_valid['images'], dataset_valid['labels'])
+    valid_loader  = DataLoader(
+        dset_valid, 
         batch_size=cf.batch_size, 
         shuffle=True, 
         worker_init_fn=utils.seed_worker, 
@@ -68,7 +68,7 @@ def main(cf):
     ## Generalization performance
     trainer = PCTrainer(model)
     with torch.no_grad():
-        test_rmse = trainer.test(test_loader, cf.n_max_iters, cf.fixed_preds_test)
+        valid_rmse = trainer.test(valid_loader, cf.n_max_iters, cf.fixed_preds_test)
 
     # Episodic replay RMSE  
     replay_rmse = 0
@@ -102,15 +102,7 @@ def main(cf):
     y_train = labels_train
     clf = LogisticRegression(random_state=cf.seed).fit(X_train, y_train)
 
-    dataset_valid = torch.load('data/mnist_valid.pt')
-    dset_valid = TensorDataset(dataset_valid['images'], dataset_valid['labels'])
-    valid_loader  = DataLoader(
-        dset_valid, 
-        batch_size=cf.batch_size, 
-        shuffle=True, 
-        worker_init_fn=utils.seed_worker, 
-        generator=g
-    )
+
     activities_valid, labels_valid = plotting.infer_latents(
         model, valid_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
     )
@@ -120,7 +112,7 @@ def main(cf):
 
     mode = 'a' if os.path.exists("outputs/tune_second_layer.txt") else 'w'
     with open("outputs/tune_second_layer.txt", mode) as f:
-        f.write(f"{cf.n_ec}, {replay_rmse}, {test_rmse}, {valid_acc} \n")
+        f.write(f"{cf.n_ec}, {replay_rmse}, {valid_rmse}, {valid_acc} \n")
 
 if __name__ == "__main__":
     
