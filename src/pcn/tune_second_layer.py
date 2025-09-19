@@ -34,7 +34,7 @@ def main(cf):
         generator=g
     )
         
-    model_name = f"pcn-n_ec={cf.n_ec}"
+    model_name = f"pcn-n_vc={cf.n_vc}-n_ec={cf.n_ec}"
     model = PCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init, use_decay=cf.decay
     )
