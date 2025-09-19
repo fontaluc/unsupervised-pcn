@@ -146,7 +146,8 @@ if __name__ == "__main__":
 
     # model params
     cf.n_ec = args.n_ec
-    cf.nodes = [cf.n_ec, 400, 784]
+    cf.n_vc = 450
+    cf.nodes = [cf.n_ec, cf.n_vc, 784]
     cf.use_bias = True
     cf.kaiming_init = False
     cf.decay = False
