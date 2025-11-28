@@ -60,7 +60,7 @@ def main(cf):
             cf.lr,
             batch_scale=cf.batch_scale,
             grad_clip=cf.grad_clip,
-            weight_decay=cf.weight_decay,
+            weight_decay=cf.weight_decay
         )
         for l in range(model.n_layers)
         ]
@@ -77,7 +77,7 @@ def main(cf):
             cf.lr,
             batch_scale=cf.batch_scale,
             grad_clip=cf.grad_clip,
-            weight_decay=cf.weight_decay,
+            weight_decay=cf.weight_decay
         )
         ]
         schedulers = [
@@ -92,7 +92,7 @@ def main(cf):
             cf.lr,
             batch_scale=cf.batch_scale,
             grad_clip=cf.grad_clip,
-            weight_decay=cf.weight_decay,
+            weight_decay=cf.weight_decay
         )
         ]
 

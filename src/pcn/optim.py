@@ -2,14 +2,14 @@ import numpy as np
 import torch
 import wandb
 
-def get_optim(params, optim_id, lr, q_lr=None, batch_scale=True, grad_clip=None, weight_decay=None):
+def get_optim(params, optim_id, lr, batch_scale=True, grad_clip=None, weight_decay=None):
     if optim_id == "Adam":
         return Adam(
-            params, lr=lr, q_lr=q_lr, batch_scale=batch_scale, grad_clip=grad_clip, weight_decay=weight_decay
+            params, lr=lr, batch_scale=batch_scale, grad_clip=grad_clip, weight_decay=weight_decay
         )
     elif optim_id == "SGD":
         return SGD(
-            params, lr=lr, q_lr=q_lr, batch_scale=batch_scale, grad_clip=grad_clip, weight_decay=weight_decay
+            params, lr=lr, batch_scale=batch_scale, grad_clip=grad_clip, weight_decay=weight_decay
         )
     else:
         raise ValueError(f"{optim_id} not a valid optimizer ID")
@@ -43,16 +43,15 @@ class Optimizer:
 
 
 class SGD(Optimizer):
-    def __init__(self, params, lr, q_lr=None, batch_scale=True, grad_clip=None, weight_decay=None):
+    def __init__(self, params, lr, batch_scale=True, grad_clip=None, weight_decay=None):
         super().__init__(params, batch_scale=batch_scale, grad_clip=grad_clip, weight_decay=weight_decay)
         self.lr = lr
-        self.q_lr = q_lr
 
     def step(self, *args, batch_size=None, **kwargs):
         for param in self._params:
                 # Update parameters if gradients of bias (if it is used) and weights are not None
                 if param.grad["weights"] is not None and (not param.use_bias or param.grad["bias"] is not None):
-                    _lr = self.q_lr if param.is_forward else self.lr
+                    _lr = self.lr
                     self.scale_batch(param, batch_size)
                     self.clip_grads(param)
                     self.decay_weights(param)
@@ -68,7 +67,6 @@ class Adam(Optimizer):
         self,
         params,
         lr,
-        q_lr=None,
         batch_scale=True,
         eps=1e-8,
         beta_1=0.9,
@@ -78,7 +76,6 @@ class Adam(Optimizer):
     ):
         super().__init__(params, batch_scale=batch_scale, grad_clip=grad_clip, weight_decay=weight_decay)
         self.lr = lr
-        self.q_lr = q_lr
         self.eps = eps
         self.beta_1 = beta_1
         self.beta_2 = beta_2
@@ -96,7 +93,7 @@ class Adam(Optimizer):
 
             for p, param in enumerate(self._params):
                 if param.grad["weights"] is not None and (not param.use_bias or param.grad["bias"] is not None):
-                    _lr = self.q_lr if param.is_forward else self.lr
+                    _lr = self.lr
                     self.scale_batch(param, batch_size)
                     self.clip_grads(param)
                     self.decay_weights(param)

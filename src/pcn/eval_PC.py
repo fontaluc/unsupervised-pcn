@@ -14,7 +14,7 @@ def main(cf):
     g.manual_seed(cf.seed)
 
     dataset_train = torch.load('data/mnist_train.pt')
-    dset_train = TensorDataset(dataset_train['images'][:cf.N], dataset_train['labels'][:cf.N])
+    dset_train = TensorDataset(dataset_train['images'], dataset_train['labels'])
     train_loader = DataLoader(
         dset_train, 
         batch_size=cf.batch_size, 
@@ -22,15 +22,17 @@ def main(cf):
         worker_init_fn=utils.seed_worker, 
         generator=g
     )
+    N = len(dataset_train)
 
+    model_name = f"pcn-n_ec={cf.n_ec}"
     model = PCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
-    model.load_state_dict(torch.load(f"models/pcn-{cf.N}-schedule={cf.schedule}.pt", map_location=utils.DEVICE, weights_only=True))
+    model.load_state_dict(torch.load(f"models/{model_name}.pt", map_location=utils.DEVICE, weights_only=True))
 
     # Create folder if it doesn't exist
-    if not os.path.exists(f"outputs/pcn-{cf.N}"):
-        os.makedirs(f"outputs/pcn-{cf.N}")
+    if not os.path.exists(f"outputs/{model_name}"):
+        os.makedirs(f"outputs/{model_name}")
 
     ## Recall performance
     # Qualitatively on ten images
@@ -54,7 +56,7 @@ def main(cf):
     for m in range(test_size):
         for n in range(model.n_nodes):
             axes[m, n].plot(model.plot_batch_errors[m][n])
-    fig.savefig(f"outputs/pcn-{cf.N}/recall-convergence.png")
+    fig.savefig(f"outputs/{model_name}/recall-convergence.png")
 
     fig, axes = plt.subplots(test_size, 3, figsize = (5*3, 5*test_size))
     axes[0, 0].set_title('Observation', fontsize=30)
@@ -64,10 +66,10 @@ def main(cf):
         plotting.plot_samples(axes[m, 0], img_batch_half[m], color=False)
         plotting.plot_samples(axes[m, 1], model.mus[-1][m], color=False)
         plotting.plot_samples(axes[m, 2], img_batch[m], color=False)
-    fig.savefig(f'outputs/pcn-{cf.N}/recall.png')
+    fig.savefig(f'outputs/{model_name}/recall.png')
 
     # Quantitatively on the whole training set: average RMSE between recalled and original images
-    rmse = 0 
+    mse = 0 
     with torch.no_grad():
         for img_batch, label_batch in tqdm(train_loader):
             img_batch_half = utils.mask_image(img_batch, n_cut)
@@ -81,11 +83,8 @@ def main(cf):
                 fixed_preds=cf.fixed_preds_test
             )
             img_batch = utils.set_tensor(img_batch)
-            rmse += torch.sum(utils.rmse(img_batch, model.mus[-1])).item()
-    rmse = rmse/cf.N
-    mode = 'a' if os.path.exists("outputs/recall_rmse.txt") else 'w'
-    with open("outputs/recall_rmse.txt", mode) as f:
-        f.write(f"{cf.N}, {rmse} \n")
+            mse += torch.sum(utils.mse(img_batch, model.mus[-1])).item()
+    recall_mse = mse/N
 
     ## Generalization performance
     dataset_test = torch.load('data/mnist_test.pt')
@@ -99,19 +98,18 @@ def main(cf):
     )
     trainer = PCTrainer(model)
     with torch.no_grad():
-        test_rmse = trainer.test(test_loader, cf.n_max_iters, cf.fixed_preds_test)
-    mode = 'a' if os.path.exists("outputs/test_rmse.txt") else 'w'
-    with open("outputs/test_rmse.txt", mode) as f:
-        f.write(f"{cf.N}, {float(test_rmse)} \n") # convert np.float64 to float for writing
+        test_mse = trainer.test(test_loader, cf.n_max_iters, cf.fixed_preds_test)
+    mode = 'a' if os.path.exists("outputs/eval_PC.txt") else 'w'
+    with open("outputs/eval_PC.txt", mode) as f:
+        f.write(f"{cf.n_ec}, {recall_mse}, {float(test_mse)} \n") # convert np.float64 to float for writing
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(
-        description="Script that evaluates the recall performance of a PC model trained on a dataset of size N"
+        description="Script that evaluates the recall performance of a PC model"
     )
-    parser.add_argument("--N", type=int, default=64, help="Enter training set size")
+    parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
-    parser.add_argument("--schedule", type=bool, default=False, help="Enter scheduler use")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -126,7 +124,6 @@ if __name__ == "__main__":
     cf.label_scale = None
     cf.normalize = True
     cf.batch_size = 64
-    cf.N = args.N
 
     # inference params
     cf.mu_dt = 0.01
@@ -139,9 +136,8 @@ if __name__ == "__main__":
     # model params
     cf.use_bias = True
     cf.kaiming_init = False
-    cf.nodes = [2, 35, 784]
+    cf.n_ec = args.n_ec
+    cf.nodes = [cf.n_ec, 400, 784]
     cf.act_fn = utils.Tanh()
-
-    cf.schedule = args.schedule
 
     main(cf)

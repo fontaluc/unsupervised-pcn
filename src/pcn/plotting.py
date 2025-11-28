@@ -188,7 +188,7 @@ def plot_levels(activities, labels, markers='o'):
     n_nodes = len(activities)
     fig, axes = plt.subplots(n_nodes, 1, figsize=(5, 5*n_nodes), constrained_layout=True)
     for n in range(n_nodes):
-        axes[n].set_xlabel(f'Level {n_nodes - n}')
+        axes[n].set_xlabel(f'Level {n}')
         y = torch.Tensor(labels)
         z = torch.Tensor(activities[n])
         visualize_latent(axes[n], z, y, markers)
@@ -214,7 +214,7 @@ def visualize_samples(model, cf, activities_test, labels_test, ec_batch, labels)
     K = len(ec_batch)
     sample_size = K*cf.batch_size
     markers = ['*' for _ in range(sample_size)] + ['o' for _ in range(len(labels_test))]
-    fig1, axes = plt.subplots(1, K, figsize = (5*K, 5))
+    fig1, axes = plt.subplots(K//2, 2, figsize = (2*5, 5*K//2))
     for k in range(K):
         label = int(labels[k*cf.batch_size])
         with torch.no_grad():
@@ -225,9 +225,11 @@ def visualize_samples(model, cf, activities_test, labels_test, ec_batch, labels)
                 init_std=cf.init_std,
                 fixed_preds=cf.fixed_preds_test
             )
-
-        axes[k].set_title(f'Class {label}')
-        plot_samples(axes[k], model.preds[-1], color=False)
+        
+        i = k//2
+        j = k%2
+        axes[i, j].set_title(f'Class {label}')
+        plot_samples(axes[i, j], model.preds[-1], color=False)
         
         for n in range(model.n_nodes -1):
             activities[n] += model.mus[n].to('cpu').tolist()

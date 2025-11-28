@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from pcn.models import PCModel, PCTrainer
 import os
 from sklearn.linear_model import LogisticRegression
+import pandas as pd
 
 def main(cf):
 
@@ -34,7 +35,7 @@ def main(cf):
         generator=g
     )
         
-    model_name = f"pcn-n_vc={cf.n_vc}-n_ec={cf.n_ec}"
+    model_name = f"pcn-n_vc={cf.n_vc}-n_ec={cf.n_ec}" if cf.n_ec > 0 else f"pcn-n_vc={cf.n_vc}"
     model = PCModel(
         nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init, use_decay=cf.decay
     )
@@ -44,55 +45,56 @@ def main(cf):
     if not os.path.exists(f"outputs/{model_name}"):
         os.makedirs(f"outputs/{model_name}")
 
-    ## Recall performance
-    # img_batch, label_batch = next(iter(train_loader))
-    # n_cut = img_batch.size(1)//2
-    # # Quantitatively on the whole training set: average RMSE between recalled and original images
-    # recall_rmse = 0 
-    # with torch.no_grad():
-    #     for img_batch, label_batch in tqdm(train_loader):
-    #         img_batch_half = utils.mask_image(img_batch, n_cut)
-    #         img_batch_half = utils.set_tensor(img_batch_half)
-    #         model.recall_batch(
-    #             img_batch_half, 
-    #             cf.n_max_iters, 
-    #             n_cut=n_cut, 
-    #             step_tolerance=cf.step_tolerance,
-    #             init_std=cf.init_std,
-    #             fixed_preds=cf.fixed_preds_test
-    #         )
-    #         img_batch = utils.set_tensor(img_batch)
-    #         recall_rmse += torch.sum(utils.rmse(img_batch, model.mus[-1])).item()
-    # recall_rmse = recall_rmse/N
+    # Episodic replay RMSE
+    if cf.n_ec > 0:  
+        replay_mse = 0
+        with torch.no_grad():
+            for img_batch, label_batch in tqdm(train_loader):
+                img_batch = utils.set_tensor(img_batch)
+                # Get EC activities for episodes
+                model.test_batch(
+                    img_batch, 
+                    n_iters=cf.n_max_iters, 
+                    step_tolerance=cf.step_tolerance, 
+                    init_std=cf.init_std, 
+                    fixed_preds=cf.fixed_preds_test
+                )
+                ec_batch = utils.set_tensor(model.mus[0])
+                model.replay_batch(
+                    ec_batch, 
+                    cf.n_max_iters,
+                    step_tolerance=cf.step_tolerance,
+                    init_std=cf.init_std,
+                    fixed_preds=cf.fixed_preds_test
+                )
+                replay_mse += torch.sum(utils.mse(img_batch, model.preds[-1])).item()
+        replay_mse = replay_mse/N
+    else:
+        replay_mse = None
 
-    ## Generalization performance
-    trainer = PCTrainer(model)
+    ## Pattern completion performance
+    n_cut = dataset_valid['images'].size(1)//2
+    recall_mse = 0 
     with torch.no_grad():
-        valid_rmse = trainer.test(valid_loader, cf.n_max_iters, cf.fixed_preds_test)
-
-    # Episodic replay RMSE  
-    replay_rmse = 0
-    with torch.no_grad():
-        for img_batch, label_batch in tqdm(train_loader):
-            img_batch = utils.set_tensor(img_batch)
-            # Get EC activities for episodes
-            model.test_batch(
-                img_batch, 
-                n_iters=cf.n_max_iters, 
-                step_tolerance=cf.step_tolerance, 
-                init_std=cf.init_std, 
-                fixed_preds=cf.fixed_preds_test
-            )
-            ec_batch = utils.set_tensor(model.mus[0])
-            model.replay_batch(
-                ec_batch, 
-                cf.n_max_iters,
+        for img_batch, label_batch in tqdm(valid_loader):
+            img_batch_half = utils.mask_image(img_batch, n_cut)
+            img_batch_half = utils.set_tensor(img_batch_half)
+            model.recall_batch(
+                img_batch_half, 
+                cf.n_max_iters, 
+                n_cut=n_cut, 
                 step_tolerance=cf.step_tolerance,
                 init_std=cf.init_std,
                 fixed_preds=cf.fixed_preds_test
             )
-            replay_rmse += torch.sum(utils.rmse(img_batch, model.preds[-1])).item()
-    replay_rmse = replay_rmse/N
+            img_batch = utils.set_tensor(img_batch)
+            recall_mse += torch.sum(utils.mse(img_batch, model.mus[-1])).item()
+    recall_mse = recall_mse/dataset_valid['images'].size(0)
+
+    ## Generalization performance
+    trainer = PCTrainer(model)
+    with torch.no_grad():
+        valid_mse = trainer.test(valid_loader, cf.n_max_iters, cf.fixed_preds_test)
 
     # Classification accuracy
     activities_train, labels_train = plotting.infer_latents(
@@ -110,9 +112,13 @@ def main(cf):
     y_valid = labels_valid
     valid_acc = clf.score(X_valid, y_valid)
 
-    mode = 'a' if os.path.exists("outputs/tune_second_layer.txt") else 'w'
-    with open("outputs/tune_second_layer.txt", mode) as f:
-        f.write(f"{cf.n_ec}, {replay_rmse}, {valid_rmse}, {valid_acc} \n")
+    data = [cf.n_ec, replay_mse, recall_mse, valid_mse, valid_acc]
+    if os.path.exists("outputs/tune_second_layer.csv"):
+        df = pd.read_csv("outputs/tune_second_layer.csv", index_col=0)
+        df.loc[len(df)] = data
+    else:
+        df = pd.DataFrame([data], columns=['EC size', 'Replay error', 'Completion error', 'Validation error', 'Validation accuracy'])
+    df.to_csv('outputs/tune_second_layer.csv')
 
 if __name__ == "__main__":
     
@@ -147,7 +153,7 @@ if __name__ == "__main__":
     # model params
     cf.n_ec = args.n_ec
     cf.n_vc = 450
-    cf.nodes = [cf.n_ec, cf.n_vc, 784]
+    cf.nodes = [cf.n_ec, cf.n_vc, 784] if cf.n_ec > 0 else [cf.n_vc, 784]
     cf.use_bias = True
     cf.kaiming_init = False
     cf.decay = False

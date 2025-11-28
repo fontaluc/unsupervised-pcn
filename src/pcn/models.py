@@ -90,6 +90,13 @@ class PCModel(nn.Module):
         self.set_target(img_batch_corrupt)
         self.recall_updates(n_iters, step_tolerance, n_cut, fixed_preds=fixed_preds)
 
+    def precision_recall_batch(self, img_batch_corrupt, n_iters, n_cut, step_tolerance=1e-5, init_std=0.05, fixed_preds=False):
+        batch_size = img_batch_corrupt.size(0)
+        self.reset()
+        self.reset_mus(batch_size, init_std)
+        self.set_target(img_batch_corrupt)
+        self.precision_recall_updates(n_iters, step_tolerance, n_cut, fixed_preds=fixed_preds)
+
     def updates(self, n_iters, fixed_preds=False):
         self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
         self.errs[0] = self.mus[0] - self.preds[0]
@@ -140,6 +147,36 @@ class PCModel(nn.Module):
                 if not fixed_preds: 
                     self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1]) 
                 break
+
+    def precision_recall_updates(self, n_iters, step_tolerance, n_cut, fixed_preds=False):
+        batch_size = self.mus[0].shape[0]
+        self.plot_batch_errors = [[[] for n in range(self.n_nodes)] for m in range(batch_size)]
+        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
+        self.errs[0] = self.mus[0] - self.preds[0]
+        for n in range(1, self.n_nodes):
+            self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
+            self.errs[n] = self.mus[n] - self.preds[n]
+        self.errs[-1][:, n_cut:] = utils.set_tensor(torch.zeros_like(self.errs[-1][:, n_cut:]))
+        relative_diff = torch.empty(self.n_layers - 1, batch_size)
+        for itr in range(n_iters):           
+            for l in range(1, self.n_layers): 
+                delta = self.layers[l].backward(self.errs[l + 1]) - self.errs[l]
+                relative_diff[l-1] = delta.norm(dim=1)/self.mus[l].norm(dim=1)
+                self.mus[l] = self.mus[l] + self.mu_dt * delta
+
+            for n in range(1, self.n_nodes):
+                if not fixed_preds:
+                    self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
+                self.errs[n] = self.mus[n] - self.preds[n] 
+            self.errs[-1][:, n_cut:] = utils.set_tensor(torch.zeros_like(self.errs[-1][:, n_cut:]))
+            
+            for n in range(self.n_nodes):
+                errors = self.get_errors(n)/self.nodes[n]
+                for m in range(batch_size):
+                    self.plot_batch_errors[m][n].append(errors[m])
+
+            if (relative_diff < step_tolerance).sum().item():
+                break  
 
     def generation_updates(self, n_iters, step_tolerance, fixed_preds=False):
         batch_size = self.mus[0].shape[0]
@@ -232,7 +269,7 @@ class PCModel(nn.Module):
                     self.plot_batch_errors[m][n].append(errors[m])
 
             if (relative_diff < step_tolerance).sum().item():
-                break       
+                break 
 
     def update_grads(self):
         for l in range(self.n_layers):
@@ -306,18 +343,15 @@ class PCTrainer(object):
     
     def test(self, data_loader, n_iters, fixed_preds) -> float:
         """
-        Return RMSE between original and reconstructed images averaged over the testing dataset
+        Return MSE between original and reconstructed images averaged over the testing dataset
         """
-        test_epoch_errors = []
-        for batch_id, (img_batch, label_batch) in enumerate(data_loader):   
+        test_mse = 0
+        for img_batch, label_batch in data_loader:   
             img_batch = utils.set_tensor(img_batch)
             self.model.test_batch(img_batch, n_iters, fixed_preds=fixed_preds)
-            errors = self.model.get_errors(-1).sqrt()/self.model.nodes[-1] # RMSE
-            
-            # gather data for the current batch
-            test_epoch_errors += [errors.mean().item()]
+            errors = self.model.get_errors(-1)/self.model.nodes[-1] # MSE
+            test_mse += torch.sum(errors).item()
 
-        # gather data for the full epoch
-        test_error = np.mean(test_epoch_errors)
+        test_mse = test_mse/len(data_loader.dataset)
 
-        return float(test_error)
+        return float(test_mse)

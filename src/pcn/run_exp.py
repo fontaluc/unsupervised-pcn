@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, TensorDataset
 from pcn.models import PCModel
 import os
+import numpy as np
 
 def main(cf):
 
@@ -13,7 +14,7 @@ def main(cf):
     g.manual_seed(cf.seed)
 
     dataset_train = torch.load('data/mnist_train.pt')
-    dset_train = TensorDataset(dataset_train['images'][:cf.N], dataset_train['labels'][:cf.N])
+    dset_train = TensorDataset(dataset_train['images'], dataset_train['labels'])
     train_loader = DataLoader(
         dset_train, 
         batch_size=cf.batch_size, 
@@ -22,21 +23,23 @@ def main(cf):
         generator=g
     )
 
+    model_name = f"pcn-n_vc={cf.n_vc}-n_ec={cf.n_ec}"
+
     model = PCModel(
-        nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
+        nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init, use_decay=cf.decay
     )
-    model.load_state_dict(torch.load(f"models/pcn-N={cf.N}-n_ec={cf.n_ec}-schedule={cf.schedule}.pt", map_location=utils.DEVICE, weights_only=True))
+    model.load_state_dict(torch.load(f"models/{model_name}.pt", map_location=utils.DEVICE, weights_only=True))
 
     # Create folder if it doesn't exist
-    if not os.path.exists(f"outputs/pcn-N={cf.N}-n_ec={cf.n_ec}-schedule={cf.schedule}"):
-        os.makedirs(f"outputs/pcn-N={cf.N}-n_ec={cf.n_ec}-schedule={cf.schedule}")
+    if not os.path.exists(f"outputs/{model_name}"):
+        os.makedirs(f"outputs/{model_name}")
 
     # Weights as images
     fig, ax = plt.subplots()
     plotting.plot_samples(ax, model.layers[1].weights)
-    fig.savefig(f"outputs/pcn-N={cf.N}-n_ec={cf.n_ec}-schedule={cf.schedule}/weights.png")
+    fig.savefig(f"outputs/{model_name}/weights.png")
 
-    # Replay
+    # Experience replay
     img_batch, label_batch = next(iter(train_loader))
 
     # Get EC activities for episodes
@@ -65,7 +68,7 @@ def main(cf):
     plotting.plot_samples(axes[0], img_batch, color=False)
     axes[1].set_title('Replay')
     plotting.plot_samples(axes[1], model.preds[-1], color=False)
-    fig.savefig(f"outputs/pcn-N={cf.N}-n_ec={cf.n_ec}-schedule={cf.schedule}/replay.png")
+    fig.savefig(f"outputs/{model_name}/replay.png")
 
     # Recall
     recall_size = 10    
@@ -87,7 +90,7 @@ def main(cf):
     for m in range(recall_size):
         for n in range(model.n_nodes):
             axes[m, n].plot(model.plot_batch_errors[m][n])
-    fig.savefig(f"outputs/pcn-N={cf.N}-n_ec={cf.n_ec}-schedule={cf.schedule}/recall-convergence.png")
+    fig.savefig(f"outputs/{model_name}/recall-convergence.png")
 
     fig, axes = plt.subplots(recall_size, 3, figsize = (5*3, 5*recall_size))
     axes[0, 0].set_title('Observation', fontsize=30)
@@ -97,32 +100,52 @@ def main(cf):
         plotting.plot_samples(axes[m, 0], img_batch_half[m], color=False)
         plotting.plot_samples(axes[m, 1], model.mus[-1][m], color=False)
         plotting.plot_samples(axes[m, 2], img_batch[m], color=False)
-    fig.savefig(f'outputs/pcn-N={cf.N}-n_ec={cf.n_ec}-schedule={cf.schedule}/recall.png')
+    fig.savefig(f'outputs/{model_name}/recall.png')
 
-    dataset_test = torch.load('data/mnist_test.pt')
-    dset_test = TensorDataset(dataset_test['images'], dataset_test['labels'])
-    test_loader = DataLoader(
-        dset_test, 
+    dataset_valid = torch.load('data/mnist_valid.pt')
+    dset_valid = TensorDataset(dataset_valid['images'], dataset_valid['labels'])
+    valid_loader = DataLoader(
+        dset_valid, 
         batch_size=cf.batch_size, 
         shuffle=True, 
         worker_init_fn=utils.seed_worker, 
         generator=g
     )
 
-    # Hierarchical representations of test data
-    fig = plotting.plot_levels(model, test_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test)
-    fig.savefig(f'outputs/pcn-N={cf.N}-n_ec={cf.n_ec}-schedule={cf.schedule}/latents.png')
+    # Hierarchical representations of valid data
+    activities_valid, labels_valid = plotting.infer_latents(
+        model, valid_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
+    )
+    fig = plotting.plot_levels(activities_valid, labels_valid)
+    fig.savefig(f'outputs/{model_name}/latents.png')
+
+    # Generative replay
+    activities_train, labels_train = plotting.infer_latents(
+        model, train_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
+    )    
+    
+    classes = np.unique(dataset_train['labels'])
+    labels = []
+    ec_batch_euclid = []
+    for i in classes:
+        indices = np.where(np.array(labels_train) == i)[0]
+        z0_train = np.array(activities_train[0])[indices]
+        z0 = utils.sample_from_latent(z0_train, cf.batch_size)
+        ec_batch_euclid.append(utils.set_tensor(z0))
+        labels += [i for _ in range(cf.batch_size)]
+    
+    fig1, fig2 = plotting.visualize_samples(model, cf, activities_valid, labels_valid, ec_batch_euclid, labels)
+    fig1.savefig(f"outputs/{model_name}/gen-replay.png")
+    fig2.savefig(f'outputs/{model_name}/latents-gen-replay.png')
     
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(
-        description="Script that evaluates the PC model trained on a dataset of size N"
+        description="Script that evaluates the PC model"
     )
-    parser.add_argument("--N", type=int, default=64, help="Enter training set size")
-    parser.add_argument("--n_ec", type=int, default=2, help="Enter size of EC layer")
+    parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
-    parser.add_argument("--schedule", type=bool, default=False, help="Enter scheduler use")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -137,16 +160,12 @@ if __name__ == "__main__":
     cf.label_scale = None
     cf.normalize = True
     cf.batch_size = 64
-    cf.N = args.N
-
-    # optim params
-    cf.schedule = args.schedule
 
     # inference params
     cf.mu_dt = 0.01
     cf.n_train_iters = 50
     cf.n_test_iters = 200
-    cf.n_max_iters = 10000
+    cf.n_max_iters = 20000
     cf.step_tolerance = 1e-5
     cf.init_std = 0.01
     cf.fixed_preds_train = False
@@ -155,8 +174,10 @@ if __name__ == "__main__":
     # model params
     cf.use_bias = True
     cf.kaiming_init = False
+    cf.n_vc = 450
     cf.n_ec = args.n_ec
-    cf.nodes = [cf.n_ec, 35, 784]
+    cf.nodes = [cf.n_ec, cf.n_vc, 784]
     cf.act_fn = utils.Tanh()
+    cf.decay = False
 
     main(cf)

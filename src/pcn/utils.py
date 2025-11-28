@@ -190,10 +190,18 @@ def mask_image(img_batch, n_cut):
     img_batch_half[:, n_cut:] = 0
     return img_batch_half
 
-def rmse(img_batch, img_batch_recall):
-    n_features = img_batch.size(1)
-    return torch.sqrt(torch.sum((img_batch - img_batch_recall)**2, axis = 1))/n_features
+def mse(image0, image1):
+    return torch.mean((image0 - image1)**2, dim = 1)
 
 def early_stop(optimizers, lr):
     L = len(optimizers)
     return sum([optimizers[l].lr < lr for l in range(L)]) == L
+
+def sample_from_latent(z, n):
+    mu = np.mean(z, axis=0)
+    cov = np.cov(z, rowvar=False)
+    # 2. Cholesky decomposition for sampling
+    L = np.linalg.cholesky(cov + 1e-6 * np.eye(cov.shape[0]))  # add jitter
+    # Sample from standard Gaussian
+    eps = np.random.randn(n, z.shape[1])
+    return torch.from_numpy(mu + eps @ L.T)
