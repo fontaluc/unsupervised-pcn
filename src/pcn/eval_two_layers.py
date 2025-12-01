@@ -23,7 +23,6 @@ def main(cf):
         worker_init_fn=utils.seed_worker, 
         generator=g
     )
-    N = len(dataset_train)
 
     dataset_valid = torch.load('data/mnist_valid.pt')
     dset_valid = TensorDataset(dataset_valid['images'], dataset_valid['labels'])
@@ -68,7 +67,7 @@ def main(cf):
                     fixed_preds=cf.fixed_preds_test
                 )
                 replay_mse += torch.sum(utils.mse(img_batch, model.preds[-1])).item()
-        replay_mse = replay_mse/N
+        replay_mse = replay_mse/len(dset_train)
     else:
         replay_mse = float("nan")
 
@@ -89,7 +88,7 @@ def main(cf):
             )
             img_batch = utils.set_tensor(img_batch)
             recall_mse += torch.sum(utils.mse(img_batch, model.mus[-1])).item()
-    recall_mse = recall_mse/dataset_valid['images'].size(0)
+    recall_mse = recall_mse/len(dset_valid)
 
     ## Generalization performance
     trainer = PCTrainer(model)
