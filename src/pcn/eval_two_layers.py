@@ -70,7 +70,7 @@ def main(cf):
                 replay_mse += torch.sum(utils.mse(img_batch, model.preds[-1])).item()
         replay_mse = replay_mse/N
     else:
-        replay_mse = None
+        replay_mse = float("nan")
 
     ## Pattern completion performance
     n_cut = dataset_valid['images'].size(1)//2
@@ -114,11 +114,11 @@ def main(cf):
 
     data = [cf.n_ec, replay_mse, recall_mse, valid_mse, valid_acc]
     if os.path.exists("outputs/tune_second_layer.csv"):
-        df = pd.read_csv("outputs/tune_second_layer.csv", index_col=0)
+        df = pd.read_csv("outputs/tune_second_layer.csv")
         df.loc[len(df)] = data
     else:
         df = pd.DataFrame([data], columns=['EC size', 'Replay error', 'Completion error', 'Validation error', 'Validation accuracy'])
-    df.to_csv('outputs/tune_second_layer.csv')
+    df.to_csv('outputs/tune_second_layer.csv', index=False)
 
 if __name__ == "__main__":
     
