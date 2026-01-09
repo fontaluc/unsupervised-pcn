@@ -5,14 +5,13 @@ import math
 
 class Layer(nn.Module):
     def __init__(
-        self, in_size, out_size, act_fn, use_bias=False, kaiming_init=False, is_forward=False
+        self, in_size, out_size, act_fn, use_bias=False, kaiming_init=False
     ):
         super().__init__()
         self.in_size = in_size
         self.out_size = out_size
         self.act_fn = act_fn
         self.use_bias = use_bias
-        self.is_forward = is_forward
         self.kaiming_init = kaiming_init
 
         self.weights = nn.Parameter(utils.set_tensor(torch.empty((self.in_size, self.out_size))))
@@ -50,23 +49,15 @@ class FCLayer(Layer):
         out_size, 
         act_fn, 
         use_bias=False, 
-        kaiming_init=False, 
-        is_forward=False, 
-        use_decay=False, 
-        alpha=0.1, 
-        ema_alpha=0.01,
+        kaiming_init=False 
     ):
         super().__init__(
             in_size, 
             out_size, 
             act_fn, 
             use_bias, 
-            kaiming_init,
-            is_forward=is_forward)
+            kaiming_init)
         self.use_bias = use_bias
-        self.use_decay = use_decay
-        self.alpha = alpha
-        self.ema_alpha = ema_alpha
         self.theta_meta = 0
         self.inp = None
 
@@ -83,11 +74,6 @@ class FCLayer(Layer):
     def update_gradient(self, err):
         fn_deriv = self.act_fn.deriv(torch.matmul(self.inp, self.weights) + self.bias)
         delta = torch.matmul(self.inp.T, err * fn_deriv)        
-        if self.use_decay:
-            activity = torch.mean(self.inp ** 2)
-            self.theta_meta = (1 - self.ema_alpha) * self.theta_meta + self.ema_alpha * activity
-            if activity > self.theta_meta:
-                delta *= self.alpha
         self.grad["weights"] = delta
         if self.use_bias:
             self.grad["bias"] = torch.sum(err * fn_deriv, axis=0)

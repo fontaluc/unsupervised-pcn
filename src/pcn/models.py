@@ -6,7 +6,7 @@ import numpy as np
 import wandb
 
 class PCModel(nn.Module):
-    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False, use_decay=False):
+    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False):
         super().__init__()
         self.nodes = nodes
         self.mu_dt = mu_dt
@@ -24,8 +24,7 @@ class PCModel(nn.Module):
                 out_size=nodes[l + 1],
                 act_fn=_act_fn,
                 use_bias=_use_bias,
-                kaiming_init=kaiming_init,
-                use_decay=use_decay
+                kaiming_init=kaiming_init
             )
             self.layers.append(layer)
         self.layers = nn.ModuleList(self.layers)
@@ -279,9 +278,9 @@ class PCModel(nn.Module):
         return torch.sum(self.errs[n] ** 2, dim=1).cpu()
     
 class PCTrainer(object):
-    def __init__(self, model, optimizers=[]):
+    def __init__(self, model, optimizer):
         self.model = model
-        self.optimizers = optimizers
+        self.optimizer = optimizer
     
     def train(self, data_loader, epoch, n_iters, fixed_preds, log=True, log_freq=1000):
         """
@@ -291,23 +290,16 @@ class PCTrainer(object):
         train_epoch_errors = [[] for _ in range(self.model.n_nodes)]
         n_batches = len(data_loader)
         for batch_id, (img_batch, label_batch) in enumerate(data_loader):   
-            img_batch = utils.set_tensor(img_batch)
             self.model.train_batch(img_batch, n_iters, fixed_preds=fixed_preds)
 
-            # log gradients
-            t = epoch * n_batches + batch_id
-            # if log and t%log_freq == 0:
-            #     for l in range(self.model.n_layers):
-            #         wandb.log({f'grad_{l}': wandb.Histogram(self.model.layers[l].grad['weights'].cpu().detach())})
-
-            for optimizer in self.optimizers:
-                optimizer.step(
-                    curr_epoch=epoch,
-                    curr_batch=batch_id,
-                    n_batches=n_batches,
-                    batch_size=img_batch.size(0),
-                    log=log and t%log_freq == 0,
-                )
+            t = epoch * n_batches + batch_id        
+            self.optimizer.step(
+                curr_epoch=epoch,
+                curr_batch=batch_id,
+                n_batches=n_batches,
+                batch_size=img_batch.size(0),
+                log=log and t%log_freq == 0,
+            )
            
             # gather data for the current batch
             for n in range(self.model.n_nodes):
@@ -333,7 +325,6 @@ class PCTrainer(object):
         """
         Return errors in all layers averaged over an input validation batch
         """
-        img_batch = utils.set_tensor(img_batch)
         self.model.eval_batch(img_batch, n_iters, fixed_preds=fixed_preds)
         valid_errors = []
         for n in range(self.model.n_nodes):
@@ -346,8 +337,7 @@ class PCTrainer(object):
         Return MSE between original and reconstructed images averaged over the testing dataset
         """
         test_mse = 0
-        for img_batch, label_batch in data_loader:   
-            img_batch = utils.set_tensor(img_batch)
+        for img_batch, label_batch in data_loader:  
             self.model.test_batch(img_batch, n_iters, fixed_preds=fixed_preds)
             errors = self.model.get_errors(-1)/self.model.nodes[-1] # MSE
             test_mse += torch.sum(errors).item()
