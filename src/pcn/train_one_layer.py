@@ -39,8 +39,9 @@ def main(cf):
     train_loader = datasets.get_dataloader(train_dataset, cf.batch_size)
     valid_loader = datasets.get_dataloader(validation_dataset, cf.batch_size)
 
+    nodes = [cf.n_hidden, train_dataset.data[0].numel()]
     model = PCModel(
-        nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
+        nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
     
     optimizer = optim.get_optim(
@@ -133,7 +134,6 @@ if __name__ == "__main__":
     cf.use_bias = True
     cf.kaiming_init = False
     cf.n_hidden = args.n_hidden
-    cf.nodes = [cf.n_hidden, 784]
     cf.act_fn = utils.Tanh()
 
     main(cf)
