@@ -1,4 +1,3 @@
-import torch
 from torch.utils import data
 from torchvision import datasets, transforms
 
@@ -28,9 +27,9 @@ class CIFAR10(datasets.CIFAR10):
         if size is not None:
             self._reduce(size)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index): # get a single sample
         data, target = super().__getitem__(index)
-        data = _to_vector(data)
+        data = _to_vector(data) 
         return data, target
 
     def _reduce(self, size):
@@ -54,8 +53,8 @@ class FashionMNIST(datasets.FashionMNIST):
         self.targets = self.targets[0:size]
 
 
-def get_dataloader(dataset, batch_size):
-    dataloader = data.DataLoader(dataset, batch_size, shuffle=True, drop_last=True)
+def get_dataloader(dataset, batch_size): 
+    dataloader = data.DataLoader(dataset, batch_size, shuffle=True, drop_last=True) # makes batches of samples individually obtained with __getitem__
     return list(map(_preprocess_batch, dataloader))
 
 def _preprocess_batch(batch):
@@ -66,9 +65,8 @@ def _preprocess_batch(batch):
 def _get_transform(normalize=True, mean=(0.5), std=(0.5)):
     transform = [transforms.ToTensor()]
     if normalize:
-        transform + [transforms.Normalize(mean=mean, std=std)]
+        transform += [transforms.Normalize(mean=mean, std=std)]
     return transforms.Compose(transform)
 
-def _to_vector(batch):
-    batch_size = batch.size(0)
-    return batch.reshape(batch_size, -1).squeeze()
+def _to_vector(data):
+    return data.flatten()

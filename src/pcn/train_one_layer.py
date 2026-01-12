@@ -9,6 +9,7 @@ from pcn import datasets
 import argparse
 import wandb
 import shutil
+import numpy as np
     
 def main(cf):
 
@@ -25,21 +26,24 @@ def main(cf):
     if cf.dataset == 'mnist':
         train_dataset = datasets.MNIST(train=True, size=cf.train_size, normalize=cf.normalize)
         test_dataset = datasets.MNIST(train=False, size=cf.test_size, normalize=cf.normalize)
+        size = (28, 28)
     elif cf.dataset == 'fmnist':
         train_dataset = datasets.FashionMNIST(train=True, size=cf.train_size, normalize=cf.normalize)
         test_dataset = datasets.FashionMNIST(train=False, size=cf.test_size, normalize=cf.normalize)
+        size = (28, 28)
     else:
         train_dataset = datasets.CIFAR10(train=True, size=cf.train_size, normalize=cf.normalize)
         test_dataset = datasets.CIFAR10(train=False, size=cf.test_size, normalize=cf.normalize)
+        size = (32, 32, 3)
     
     test_size = len(test_dataset)
     train_size = len(train_dataset) - test_size
-    train_dataset, validation_dataset = random_split(train_dataset, [train_size, test_size])
+    train_dataset, valid_dataset = random_split(train_dataset, [train_size, test_size])
 
     train_loader = datasets.get_dataloader(train_dataset, cf.batch_size)
-    valid_loader = datasets.get_dataloader(validation_dataset, cf.batch_size)
+    valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size)
 
-    nodes = [cf.n_hidden, train_dataset.data[0].numel()]
+    nodes = [cf.n_hidden, np.prod(size)]
     model = PCModel(
         nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
@@ -71,7 +75,7 @@ def main(cf):
             for n in range(model.n_nodes):
                 wandb.log({f'errors_{n}_valid': valid_errors[n], 'epoch': epoch})
 
-            plotting.log_mnist_plots(model, img_batch, label_batch, epoch) 
+            plotting.log_plots(model, img_batch, label_batch, epoch, size)
 
     wandb.finish()
 

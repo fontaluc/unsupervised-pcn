@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
 from torchvision.utils import make_grid
 import wandb
 import torch
@@ -13,13 +14,13 @@ from pcn import utils
 import time
 import tempfile
 
-def plot_samples(ax, x, color=False):
+def plot_samples(ax, x, size=(28, 28)):
     x = x.to('cpu')
     nrow = int(np.sqrt(x.size(0)))
-    if not color:
-        x_grid = make_grid(x.view(-1, 1, 28, 28), nrow=nrow).permute(1, 2, 0)
-    else:
-        x_grid = make_grid(torch.cat((x.view(-1, 2, 14, 14), torch.zeros(x.shape[0], 1, 14, 14)), dim = 1), nrow=nrow).permute(1, 2, 0)
+    if len(size) == 2: # grayscale
+        x_grid = make_grid(x.view(-1, 1, size[0], size[1]), nrow=nrow).permute(1, 2, 0)
+    else: # color
+        x_grid = make_grid(x.view(-1, size[0], size[1], size[2]), nrow=nrow) # CIFAR-10 are already in (H, W, C) format
     ax.imshow(x_grid)
     ax.axis('off')
 
@@ -37,13 +38,14 @@ def plot_2d_latents(ax, z, y, markers='o'):
         ax.scatter(z[:, 0], z[:, 1], c=colors)
     ax.set_aspect('equal', 'box')
 
-def plot_latents(ax, z, y, markers='o'):
+def plot_latents(ax, z, y, markers='o', tsne=True):
     z = z.to('cpu')
     y = y.to('cpu')
     palette = sns.color_palette()
     colors = np.array([palette[int(l)] for l in y])
     alphas = {'*': 1, 'o': 0.1}
-    z = TSNE(n_components=2).fit_transform(z) # n_samples > 30 (perplexit
+    z = TSNE(n_components=2).fit_transform(z) if tsne else PCA(n_components=2).fit_transform(z)
+
     if len(np.unique(markers)) > 1:
         for marker in np.unique(markers):
             indices = np.where(np.array(markers) == marker)[0]
@@ -51,19 +53,20 @@ def plot_latents(ax, z, y, markers='o'):
     else:
         ax.scatter(z[:, 0], z[:, 1], c=colors)
 
-def visualize_latent(ax, z, y, markers='o'):    
+def visualize_latent(ax, z, y, markers='o', tsne=True):    
     try:
         if z.shape[1] == 2:
             ax.set_title('Latent Samples')
             plot_2d_latents(ax, z, y, markers)
         else:
-            ax.set_title('Latent Samples (t-SNE)')
-            plot_latents(ax, z, y, markers)
+            reduction = 't-SNE' if tsne else 'PCA'
+            ax.set_title(f'Latent Samples ({reduction})')
+            plot_latents(ax, z, y, markers, tsne)
     except Exception as e:
         print(f"Could not generate the plot of the latent samples because of exception")
         print(e)
 
-def log_reconstruction(x, model, epoch, color=False):
+def log_reconstruction(x, model, epoch, size=(28, 28)):
 
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
         tmp_img = tmp_file.name  # Get unique file name
@@ -80,12 +83,12 @@ def log_reconstruction(x, model, epoch, color=False):
     # plot the observation
     ax = fig.add_subplot(1, 2, 1)
     ax.set_title('Observation')
-    plot_samples(ax, x, color)
+    plot_samples(ax, x, size)
 
     # plot the prediction
     ax = fig.add_subplot(1, 2, 2)
     ax.set_title('Prediction')
-    plot_samples(ax, x_pred, color)
+    plot_samples(ax, x_pred, size)
 
     plt.tight_layout()
     plt.savefig(tmp_img)
@@ -120,11 +123,11 @@ def log_latents(model, y, epoch):
     wandb.log({'latents': wandb.Image(tmp_img), 'epoch': epoch})
     os.remove(tmp_img)
 
-def log_mnist_plots(model, x, y, epoch):
-    log_reconstruction(x, model, epoch)
+def log_plots(model, x, y, epoch, size=(28, 28)):
+    log_reconstruction(x, model, epoch, size)
     log_latents(model, y, epoch)
 
-def make_pc_plots(model, x, y, training_errors, validation_errors, weights, color=False, tmp_img="tmp_pc_out.png"):
+def make_pc_plots(model, x, y, training_errors, validation_errors, weights, size=(28, 28), tmp_img="tmp_pc_out.png"):
     fig, axes = plt.subplots(model.n_nodes + 1, 4, figsize=(5*4, 5*(model.n_nodes + 1)), squeeze=False)
     for n in range(model.n_nodes):
         axes[n, 0].set_ylabel(f'Level {n}')
@@ -149,9 +152,9 @@ def make_pc_plots(model, x, y, training_errors, validation_errors, weights, colo
         axes[i, 3].set_visible(False)
 
     axes[model.n_nodes, 0].set_title('Observation')
-    plot_samples(axes[model.n_nodes, 0], x, color)
+    plot_samples(axes[model.n_nodes, 0], x, size)
     axes[model.n_nodes, 1].set_title('Prediction')
-    plot_samples(axes[model.n_nodes, 1], model.preds[-1], color)
+    plot_samples(axes[model.n_nodes, 1], model.preds[-1], size)
 
     ax = axes[model.n_nodes, 2]
     ax.set_title('Sum of squared prediction errors')
@@ -184,14 +187,18 @@ def make_pc_plots(model, x, y, training_errors, validation_errors, weights, colo
     except Exception as e:
         print(f"Warning: An unexpected error occurred while removing '{tmp_img}': {e}")
 
-def plot_levels(activities, labels, markers='o'):    
+def plot_levels(activities, labels, markers='o', tsne=True, vertical=True):    
     n_nodes = len(activities)
-    fig, axes = plt.subplots(n_nodes, 1, figsize=(5, 5*n_nodes), constrained_layout=True)
+    if vertical:
+        fig, axes = plt.subplots(n_nodes, 1, figsize=(5, 5*n_nodes), constrained_layout=True)
+    else:
+        fig, axes = plt.subplots(1, n_nodes, figsize=(5*n_nodes, 5), constrained_layout=True)
     for n in range(n_nodes):
-        axes[n].set_xlabel(f'Level {n}')
+        i = n_nodes - 1 - n if vertical else n
+        axes[n].set_xlabel(f'Level {i}')
         y = torch.Tensor(labels)
-        z = torch.Tensor(activities[n])
-        visualize_latent(axes[n], z, y, markers)
+        z = torch.Tensor(activities[i])
+        visualize_latent(axes[n], z, y, markers, tsne)
     return fig
 
 def infer_latents(model, dataloader, n_iters, step_tolerance, init_std, fixed_preds):
@@ -209,7 +216,7 @@ def infer_latents(model, dataloader, n_iters, step_tolerance, init_std, fixed_pr
             labels += y.tolist()
     return activities, labels
 
-def visualize_samples(model, cf, activities_test, labels_test, ec_batch, labels):
+def visualize_samples(model, cf, activities_test, labels_test, ec_batch, labels, size=(28, 28)):
     activities = [[] for _ in range(model.n_nodes)]
     K = len(ec_batch)
     sample_size = K*cf.batch_size
@@ -229,7 +236,7 @@ def visualize_samples(model, cf, activities_test, labels_test, ec_batch, labels)
         i = k//2
         j = k%2
         axes[i, j].set_title(f'Class {label}')
-        plot_samples(axes[i, j], model.preds[-1], color=False)
+        plot_samples(axes[i, j], model.preds[-1], size)
         
         for n in range(model.n_nodes -1):
             activities[n] += model.mus[n].to('cpu').tolist()
