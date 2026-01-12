@@ -65,6 +65,7 @@ if __name__ == "__main__":
     cf.seed = args.seed
 
     # dataset params
+    cf.dataset = args.dataset
     cf.batch_size = 64
 
     # inference params
