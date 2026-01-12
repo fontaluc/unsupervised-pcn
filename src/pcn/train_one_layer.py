@@ -114,7 +114,6 @@ if __name__ == "__main__":
     cf.dataset = args.dataset
     cf.train_size = args.train_size
     cf.test_size = None
-    cf.label_scale = None
     cf.normalize = True
     cf.batch_size = 64
 

@@ -66,6 +66,9 @@ if __name__ == "__main__":
 
     # dataset params
     cf.dataset = args.dataset
+    cf.train_size = None
+    cf.test_size = None
+    cf.normalize = True
     cf.batch_size = 64
 
     # inference params
