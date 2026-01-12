@@ -30,7 +30,7 @@ datasets=(fmnist cifar10)
 # compute dataset index (tasks 1-12 -> 0, 13-24 -> 1)
 dataset_index=$(( (SLURM_ARRAY_TASK_ID - 1) / 12 ))
 dataset=${datasets[$dataset_index]}
-N_hidden=(600 550 500 450 400 350 300 250 200 150 100 50)
+N_vc=(600 550 500 450 400 350 300 250 200 150 100 50)
 n_index=$(( (SLURM_ARRAY_TASK_ID - 1) % 12 ))
-n_hidden=${N_hidden[$n_index]}
-srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/train_one_layer.py --dataset="$dataset" --n_hidden=$n_hidden
+n_vc=${N_hidden[$n_index]}
+srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/train_one_layer.py --dataset="$dataset" --n_vc=$n_vc
