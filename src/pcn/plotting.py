@@ -20,7 +20,7 @@ def plot_samples(ax, x, size=(28, 28)):
     if len(size) == 2: # grayscale
         x_grid = make_grid(x.view(-1, 1, size[0], size[1]), nrow=nrow).permute(1, 2, 0)
     else: # color
-        x_grid = make_grid(x.view(-1, size[0], size[1], size[2]), nrow=nrow) # CIFAR-10 are already in (H, W, C) format
+        x_grid = make_grid(x.view(-1, size[0], size[1], size[2]), nrow=nrow).permute(1, 2, 0)
     ax.imshow(x_grid)
     ax.axis('off')
 

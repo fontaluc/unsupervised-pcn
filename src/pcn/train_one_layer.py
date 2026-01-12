@@ -34,7 +34,7 @@ def main(cf):
     else:
         train_dataset = datasets.CIFAR10(train=True, size=cf.train_size, normalize=cf.normalize)
         test_dataset = datasets.CIFAR10(train=False, size=cf.test_size, normalize=cf.normalize)
-        size = (32, 32, 3)
+        size = (3, 32, 32)
     
     test_size = len(test_dataset)
     train_size = len(train_dataset) - test_size

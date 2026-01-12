@@ -35,7 +35,7 @@ def main(cf):
     else:
         train_dataset = datasets.CIFAR10(train=True, size=cf.train_size, normalize=cf.normalize)
         test_dataset = datasets.CIFAR10(train=False, size=cf.test_size, normalize=cf.normalize)
-        size = (32, 32, 3)
+        size = (3, 32, 32)
     
     test_size = len(test_dataset)    
     train_dataset, validation_dataset = random_split(train_dataset, [cf.train_size, test_size])
