@@ -55,7 +55,7 @@ class FashionMNIST(datasets.FashionMNIST):
 
 def get_dataloader(dataset, batch_size): 
     dataloader = data.DataLoader(dataset, batch_size, shuffle=True, drop_last=True) # makes batches of samples individually obtained with __getitem__
-    return list(map(_preprocess_batch, dataloader))
+    return list(map(_preprocess_batch, dataloader)) # list of (data, label) batches
 
 def _preprocess_batch(batch):
     batch[0] = utils.set_tensor(batch[0])

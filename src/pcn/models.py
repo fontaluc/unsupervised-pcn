@@ -341,7 +341,8 @@ class PCTrainer(object):
             self.model.test_batch(img_batch, n_iters, fixed_preds=fixed_preds)
             errors = self.model.get_errors(-1)/self.model.nodes[-1] # MSE
             test_mse += torch.sum(errors).item()
-
-        test_mse = test_mse/len(data_loader.dataset)
+        n_batches = len(data_loader)
+        batch_size = img_batch.shape[0]
+        test_mse = test_mse/(n_batches*batch_size)
 
         return float(test_mse)
