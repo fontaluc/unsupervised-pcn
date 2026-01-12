@@ -14,7 +14,7 @@ import numpy as np
     
 def main(cf):
 
-    model_name = f"{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}"
+    model_name = f"{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}-n_ec={cf.n_ec}"
     os.environ["WANDB__SERVICE_WAIT"] = "300" # sometimes wandb takes more than 30s (the default time limit) to start
     wandb.login()
     wandb.init(project="unsupervised-pcn", config=cf, name=model_name)

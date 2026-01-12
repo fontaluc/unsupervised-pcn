@@ -278,7 +278,7 @@ class PCModel(nn.Module):
         return torch.sum(self.errs[n] ** 2, dim=1).cpu()
     
 class PCTrainer(object):
-    def __init__(self, model, optimizer):
+    def __init__(self, model, optimizer=None):
         self.model = model
         self.optimizer = optimizer
     
