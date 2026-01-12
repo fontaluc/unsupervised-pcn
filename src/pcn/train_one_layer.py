@@ -17,7 +17,7 @@ def main(cf):
     g = torch.Generator()
     g.manual_seed(cf.seed)
 
-    model_name = f"{cf.dataset}-n_vc={cf.n_hidden}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_hidden}"
+    model_name = f"{cf.dataset}-n_vc={cf.n_vc}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}"
     os.environ["WANDB__SERVICE_WAIT"] = "300" # sometimes wandb takes more than 30s (the default time limit) to start
     wandb.login()
     wandb.init(project="unsupervised-pcn", config=cf, name=model_name)
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
     parser.add_argument("--train_size", type=int, default=None, help="Enter training set size")
-    parser.add_argument("--n_hidden", type=int, default=100, help="Enter size of hidden layer")
+    parser.add_argument("--n_vc", type=int, default=100, help="Enter size of hidden layer")
     parser.add_argument("--n_epochs", type=int, default=200, help="Enter number of epochs")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     args = parser.parse_args()
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     # model params
     cf.use_bias = True
     cf.kaiming_init = False
-    cf.n_hidden = args.n_hidden
+    cf.n_vc = args.n_vc
     cf.act_fn = utils.Tanh()
 
     main(cf)

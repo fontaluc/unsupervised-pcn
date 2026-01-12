@@ -34,7 +34,7 @@ def main(cf):
 
     nodes = [cf.n_vc, np.prod(size)]
 
-    model_name = f"pcn-{cf.dataset}-n_vc={cf.n_hidden}" if cf.train_size == None else f"pcn-{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_hidden}"
+    model_name = f"pcn-{cf.dataset}-n_vc={cf.n_vc}" if cf.train_size == None else f"pcn-{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}"
     model = PCModel(
         nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
@@ -54,7 +54,7 @@ if __name__ == "__main__":
         description="Script that trains a PCN with one hidden layer."
     )
     parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
-    parser.add_argument("--n_hidden", type=int, default=100, help="Enter size of hidden layer")
+    parser.add_argument("--n_vc", type=int, default=100, help="Enter size of hidden layer")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     args = parser.parse_args()
 
@@ -83,6 +83,6 @@ if __name__ == "__main__":
     cf.use_bias = True
     cf.kaiming_init = False
     cf.act_fn = utils.Tanh()
-    cf.n_vc = args.n_hidden
+    cf.n_vc = args.n_vc
 
     main(cf)
