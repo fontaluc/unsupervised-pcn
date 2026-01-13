@@ -43,7 +43,7 @@ def main(cf):
     train_loader = datasets.get_dataloader(train_dataset, cf.batch_size)
     valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size)
 
-    nodes = [cf.n_hidden, np.prod(size)]
+    nodes = [cf.n_vc, np.prod(size)]
     model = PCModel(
         nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
