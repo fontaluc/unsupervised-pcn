@@ -133,6 +133,7 @@ if __name__ == "__main__":
     cf.batch_size = 64
 
     # optim params
+    cf.scheduler = args.scheduler
     cf.optim = "Adam"
     cf.lr = 1e-4
     cf.batch_scale = True
