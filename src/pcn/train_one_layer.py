@@ -114,7 +114,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_vc", type=int, default=100, help="Enter size of hidden layer")
     parser.add_argument("--n_epochs", type=int, default=200, help="Enter number of epochs")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
-    parser.add_argument("--scheduler", type=bool, default=True, help="Enter scheduler use")
+    parser.add_argument("--scheduler", action='store_true', help="Enable learning rate scheduler")
     args = parser.parse_args()
 
     # Hyperparameters dict
