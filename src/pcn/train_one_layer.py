@@ -48,14 +48,24 @@ def main(cf):
         nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
     
-    optimizer = optim.get_optim(
-        model.layers,
-        cf.optim,
-        cf.lr,
-        batch_scale=cf.batch_scale,
-        grad_clip=cf.grad_clip,
-        weight_decay=cf.weight_decay
-    )
+    if cf.scheduler:
+        optimizer = optim.get_optim(
+            model.layers,
+            cf.optim,
+            cf.lr,
+            batch_scale=cf.batch_scale
+        )        
+        scheduler = optim.ExponentialLR(optimizer, cf.gamma)  
+
+    else:
+        optimizer = optim.get_optim(
+            model.layers,
+            cf.optim,
+            cf.lr,
+            batch_scale=cf.batch_scale,
+            grad_clip=cf.grad_clip,
+            weight_decay=cf.weight_decay
+        )
 
     trainer = PCTrainer(model, optimizer)
 
@@ -67,6 +77,10 @@ def main(cf):
             )
             for n in range(model.n_nodes):
                 wandb.log({f'errors_{n}_train': train_errors[n], 'epoch': epoch})
+
+            if cf.scheduler:
+                scheduler.step()
+                wandb.log({f'lr': optimizer.lr, 'epoch': epoch}) 
 
             img_batch, label_batch = next(iter(valid_loader))            
             valid_errors = trainer.eval(
@@ -100,6 +114,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_vc", type=int, default=100, help="Enter size of hidden layer")
     parser.add_argument("--n_epochs", type=int, default=200, help="Enter number of epochs")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
+    parser.add_argument("--scheduler", type=bool, default=True, help="Enter scheduler use")
     args = parser.parse_args()
 
     # Hyperparameters dict
