@@ -115,7 +115,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
     parser.add_argument("--train_size", type=int, default=None, help="Enter training set size")
-    parser.add_argument("--n_epochs", type=int, default=2000, help="Enter number of epochs")
+    parser.add_argument("--n_epochs", type=int, default=1000, help="Enter number of epochs")
     parser.add_argument("--lr", type=float, default=1e-5, help="Enter learning rate")
     parser.add_argument("--n_vc", type=int, default=450, help="Enter size of VC layer")
     parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
@@ -134,7 +134,7 @@ if __name__ == "__main__":
 
     # dataset params
     cf.dataset = args.dataset
-    cf.train_size = cf.train_size
+    cf.train_size = args.train_size
     cf.test_size = None
     cf.normalize = True
     cf.batch_size = 64
