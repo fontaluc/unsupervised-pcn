@@ -37,8 +37,9 @@ def main(cf):
         test_dataset = datasets.CIFAR10(train=False, size=cf.test_size, normalize=cf.normalize)
         size = (3, 32, 32)
     
-    test_size = len(test_dataset)    
-    train_dataset, validation_dataset = random_split(train_dataset, [cf.train_size, test_size])
+    test_size = len(test_dataset)
+    train_size = len(train_dataset) - test_size
+    train_dataset, validation_dataset = random_split(train_dataset, [train_size, test_size])
 
     train_loader = datasets.get_dataloader(train_dataset, cf.batch_size)
     valid_loader = datasets.get_dataloader(validation_dataset, cf.batch_size)
