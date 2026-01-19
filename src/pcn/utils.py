@@ -3,6 +3,7 @@ import json
 import numpy as np
 import torch
 from pcn.optim import LRScheduler
+from pcn import datasets
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -185,9 +186,17 @@ def compute_ratios(metrics: float, object: EarlyStopping | LRScheduler):
     low_ratio = metrics/object.max
     return better_ratio, low_ratio
 
-def mask_image(img_batch, n_cut):
+def mask_image(img_batch, size):
     img_batch_half = img_batch.clone()
-    img_batch_half[:, n_cut:] = 0
+    if len(size) == 2:
+        n_cut = size[0]*size[1]//2
+        img_batch_half[:, n_cut:] = 0
+    else:
+        n_cut = size[1]//2
+        img_batch_half = img_batch_half.view(-1, size[0], size[1], size[2])
+        img_batch_half[:, :, n_cut:, :] = 0
+        img_batch_half = img_batch_half.view(-1, np.prod(size))
+
     return img_batch_half
 
 def mse(image0, image1):
@@ -205,3 +214,18 @@ def sample_from_latent(z, n):
     # Sample from standard Gaussian
     eps = np.random.randn(n, z.shape[1])
     return torch.from_numpy(mu + eps @ L.T)
+
+def get_datasets(dataset, size, normalize):
+    if dataset == 'mnist':
+        train_dataset = datasets.MNIST(train=True, size=size, normalize=normalize)
+        test_dataset = datasets.MNIST(train=False, size=size, normalize=normalize)
+        img_size = (28, 28)
+    elif dataset == 'fmnist':
+        train_dataset = datasets.FashionMNIST(train=True, size=size, normalize=normalize)
+        test_dataset = datasets.FashionMNIST(train=False, size=size, normalize=normalize)
+        img_size = (28, 28)
+    else:
+        train_dataset = datasets.CIFAR10(train=True, size=size, normalize=normalize)
+        test_dataset = datasets.CIFAR10(train=False, size=size, normalize=normalize)
+        img_size = (3, 32, 32)
+    return train_dataset, test_dataset, img_size

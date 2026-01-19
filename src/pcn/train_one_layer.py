@@ -23,18 +23,7 @@ def main(cf):
     wandb.init(project="unsupervised-pcn", config=cf, name=model_name)
     location = wandb.run.dir
 
-    if cf.dataset == 'mnist':
-        train_dataset = datasets.MNIST(train=True, size=cf.train_size, normalize=cf.normalize)
-        test_dataset = datasets.MNIST(train=False, size=cf.test_size, normalize=cf.normalize)
-        size = (28, 28)
-    elif cf.dataset == 'fmnist':
-        train_dataset = datasets.FashionMNIST(train=True, size=cf.train_size, normalize=cf.normalize)
-        test_dataset = datasets.FashionMNIST(train=False, size=cf.test_size, normalize=cf.normalize)
-        size = (28, 28)
-    else:
-        train_dataset = datasets.CIFAR10(train=True, size=cf.train_size, normalize=cf.normalize)
-        test_dataset = datasets.CIFAR10(train=False, size=cf.test_size, normalize=cf.normalize)
-        size = (3, 32, 32)
+    train_dataset, test_dataset, size = utils.get_dataset(cf.dataset, cf.train_size, cf.normalize)
     
     test_size = len(test_dataset)
     train_size = len(train_dataset) - test_size

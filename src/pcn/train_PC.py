@@ -24,25 +24,14 @@ def main(cf):
     g = torch.Generator()
     g.manual_seed(cf.seed)
 
-    if cf.dataset == 'mnist':
-        train_dataset = datasets.MNIST(train=True, size=cf.train_size, normalize=cf.normalize)
-        test_dataset = datasets.MNIST(train=False, size=cf.test_size, normalize=cf.normalize)
-        size = (28, 28)
-    elif cf.dataset == 'fmnist':
-        train_dataset = datasets.FashionMNIST(train=True, size=cf.train_size, normalize=cf.normalize)
-        test_dataset = datasets.FashionMNIST(train=False, size=cf.test_size, normalize=cf.normalize)
-        size = (28, 28)
-    else:
-        train_dataset = datasets.CIFAR10(train=True, size=cf.train_size, normalize=cf.normalize)
-        test_dataset = datasets.CIFAR10(train=False, size=cf.test_size, normalize=cf.normalize)
-        size = (3, 32, 32)
+    train_dataset, test_dataset, size = utils.get_dataset(cf.dataset, cf.train_size, cf.normalize)
     
     test_size = len(test_dataset)
     train_size = len(train_dataset) - test_size
-    train_dataset, validation_dataset = random_split(train_dataset, [train_size, test_size])
+    train_dataset, valid_dataset = random_split(train_dataset, [train_size, test_size])
 
     train_loader = datasets.get_dataloader(train_dataset, cf.batch_size)
-    valid_loader = datasets.get_dataloader(validation_dataset, cf.batch_size)
+    valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size)
 
     nodes = [cf.n_ec, cf.n_vc, np.prod(size)]
     model = PCModel(
@@ -116,7 +105,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
     parser.add_argument("--train_size", type=int, default=None, help="Enter training set size")
-    parser.add_argument("--n_epochs", type=int, default=1000, help="Enter number of epochs")
+    parser.add_argument("--n_epochs", type=int, default=500, help="Enter number of epochs")
     parser.add_argument("--lr", type=float, default=1e-5, help="Enter learning rate")
     parser.add_argument("--n_vc", type=int, default=450, help="Enter size of VC layer")
     parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
