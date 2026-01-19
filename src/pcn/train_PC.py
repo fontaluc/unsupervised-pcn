@@ -24,7 +24,7 @@ def main(cf):
     g = torch.Generator()
     g.manual_seed(cf.seed)
 
-    train_dataset, test_dataset, size = utils.get_dataset(cf.dataset, cf.train_size, cf.normalize)
+    train_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.normalize)
     
     test_size = len(test_dataset)
     train_size = len(train_dataset) - test_size
