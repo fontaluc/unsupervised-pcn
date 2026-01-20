@@ -27,7 +27,7 @@ def main(cf):
 
     nodes = [cf.n_ec, n_vc, np.prod(size)]
         
-    model_name = f"pcn-{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}" if cf.n_ec > 0 else f"pcn-{cf.dataset}-n_vc={cf.n_vc}"
+    model_name = f"pcn-{cf.dataset}-n_vc={n_vc}-n_ec={cf.n_ec}" if cf.n_ec > 0 else f"pcn-{cf.dataset}-n_vc={n_vc}"
     model = PCModel(
         nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
