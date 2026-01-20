@@ -22,15 +22,15 @@ def main(cf):
         train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(dataset, cf.train_size, cf.normalize)
         valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size)
 
-        n_vc = 750 if dataset == 'fmnist' else 2000
+        if cf.dataset == 'mnist':
+            n_vc = 450
+        elif cf.dataset == 'fmnist':
+            n_vc = 750
+        else:
+            n_vc = 2000
 
         # Compute indices corresponding to the bottom half of images in the flattened tensor
-        if len(size) == 3:
-            C, H, W = size
-            indices = torch.tensor([i*H*W + j*H + k for i in range(C) for j in range(H//2, H) for k in range(W)])
-        else:
-            H, W = size
-            indices = torch.arange(H*W//2, H*W)
+        indices = utils.get_indices(size)
         
         test_size = 5
         img_batch, label_batch = valid_loader[0]

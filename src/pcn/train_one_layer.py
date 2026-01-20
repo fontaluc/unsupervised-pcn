@@ -23,11 +23,7 @@ def main(cf):
     wandb.init(project="unsupervised-pcn", config=cf, name=model_name)
     location = wandb.run.dir
 
-    train_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.normalize)
-    
-    test_size = len(test_dataset)
-    train_size = len(train_dataset) - test_size
-    train_dataset, valid_dataset = random_split(train_dataset, [train_size, test_size])
+    train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.normalize)
 
     train_loader = datasets.get_dataloader(train_dataset, cf.batch_size)
     valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size)

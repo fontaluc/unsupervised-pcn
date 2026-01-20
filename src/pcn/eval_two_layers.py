@@ -1,12 +1,12 @@
 import argparse
 from tqdm import tqdm
-from pcn import utils, plotting
+from pcn import utils, plotting, datasets
 import torch
-from torch.utils.data import DataLoader, TensorDataset
 from pcn.models import PCModel, PCTrainer
 import os
 from sklearn.linear_model import LogisticRegression
 import pandas as pd
+import numpy as np
 
 def main(cf):
 
@@ -14,29 +14,22 @@ def main(cf):
     g = torch.Generator()
     g.manual_seed(cf.seed)
 
-    dataset_train = torch.load('data/mnist_train.pt')
-    dset_train = TensorDataset(dataset_train['images'], dataset_train['labels'])
-    train_loader = DataLoader(
-        dset_train, 
-        batch_size=cf.batch_size, 
-        shuffle=True, 
-        worker_init_fn=utils.seed_worker, 
-        generator=g
-    )
+    train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.normalize)
+    train_loader = datasets.get_dataloader(train_dataset, cf.batch_size)
+    valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size)
 
-    dataset_valid = torch.load('data/mnist_valid.pt')
-    dset_valid = TensorDataset(dataset_valid['images'], dataset_valid['labels'])
-    valid_loader  = DataLoader(
-        dset_valid, 
-        batch_size=cf.batch_size, 
-        shuffle=True, 
-        worker_init_fn=utils.seed_worker, 
-        generator=g
-    )
+    if cf.dataset == 'mnist':
+            n_vc = 450
+    elif cf.dataset == 'fmnist':
+        n_vc = 750
+    else:
+        n_vc = 2000
+
+    nodes = [cf.n_ec, n_vc, np.prod(size)]
         
-    model_name = f"pcn-n_vc={cf.n_vc}-n_ec={cf.n_ec}" if cf.n_ec > 0 else f"pcn-n_vc={cf.n_vc}"
+    model_name = f"pcn-{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}" if cf.n_ec > 0 else f"pcn-{cf.dataset}-n_vc={cf.n_vc}"
     model = PCModel(
-        nodes=cf.nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init, use_decay=cf.decay
+        nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
     model.load_state_dict(torch.load(f"models/{model_name}.pt", map_location=utils.DEVICE, weights_only=True))
 
@@ -49,7 +42,6 @@ def main(cf):
         replay_mse = 0
         with torch.no_grad():
             for img_batch, label_batch in tqdm(train_loader):
-                img_batch = utils.set_tensor(img_batch)
                 # Get EC activities for episodes
                 model.test_batch(
                     img_batch, 
@@ -67,28 +59,27 @@ def main(cf):
                     fixed_preds=cf.fixed_preds_test
                 )
                 replay_mse += torch.sum(utils.mse(img_batch, model.preds[-1])).item()
-        replay_mse = replay_mse/len(dset_train)
+        replay_mse = replay_mse/len(train_dataset)
     else:
         replay_mse = float("nan")
 
     ## Pattern completion performance
-    n_cut = dataset_valid['images'].size(1)//2
+    indices = utils.get_indices(size)
     recall_mse = 0 
     with torch.no_grad():
         for img_batch, label_batch in tqdm(valid_loader):
-            img_batch_half = utils.mask_image(img_batch, n_cut)
+            img_batch_half = utils.mask_image(img_batch, indices)
             img_batch_half = utils.set_tensor(img_batch_half)
             model.recall_batch(
                 img_batch_half, 
                 cf.n_max_iters, 
-                n_cut=n_cut, 
+                indices, 
                 step_tolerance=cf.step_tolerance,
                 init_std=cf.init_std,
                 fixed_preds=cf.fixed_preds_test
             )
-            img_batch = utils.set_tensor(img_batch)
             recall_mse += torch.sum(utils.mse(img_batch, model.mus[-1])).item()
-    recall_mse = recall_mse/len(dset_valid)
+    recall_mse = recall_mse/len(valid_dataset)
 
     ## Generalization performance
     trainer = PCTrainer(model)
@@ -111,12 +102,12 @@ def main(cf):
     y_valid = labels_valid
     valid_acc = clf.score(X_valid, y_valid)
 
-    data = [cf.n_ec, replay_mse, recall_mse, valid_mse, valid_acc]
+    data = [cf.dataset, cf.n_ec, replay_mse, recall_mse, valid_mse, valid_acc]
     if os.path.exists("outputs/tune_second_layer.csv"):
         df = pd.read_csv("outputs/tune_second_layer.csv")
         df.loc[len(df)] = data
     else:
-        df = pd.DataFrame([data], columns=['EC size', 'Replay error', 'Completion error', 'Validation error', 'Validation accuracy'])
+        df = pd.DataFrame([data], columns=['Dataset', 'EC size', 'Replay error', 'Completion error', 'Validation error', 'Validation accuracy'])
     df.to_csv('outputs/tune_second_layer.csv', index=False)
 
 if __name__ == "__main__":
@@ -124,6 +115,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Script that evaluate the PC model according to different metrics to choose the right number of EC units"
     )
+    parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")s
     parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     args = parser.parse_args()
@@ -151,11 +143,8 @@ if __name__ == "__main__":
 
     # model params
     cf.n_ec = args.n_ec
-    cf.n_vc = 450
-    cf.nodes = [cf.n_ec, cf.n_vc, 784] if cf.n_ec > 0 else [cf.n_vc, 784]
     cf.use_bias = True
     cf.kaiming_init = False
-    cf.decay = False
     cf.act_fn = utils.Tanh()
 
     main(cf)
