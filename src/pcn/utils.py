@@ -3,6 +3,7 @@ import json
 import numpy as np
 import torch
 from pcn.optim import LRScheduler
+from torch.utils.data import random_split
 from pcn import datasets
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -186,17 +187,9 @@ def compute_ratios(metrics: float, object: EarlyStopping | LRScheduler):
     low_ratio = metrics/object.max
     return better_ratio, low_ratio
 
-def mask_image(img_batch, size):
+def mask_image(img_batch, indices):
     img_batch_half = img_batch.clone()
-    if len(size) == 2:
-        n_cut = size[0]*size[1]//2
-        img_batch_half[:, n_cut:] = 0
-    else:
-        n_cut = size[1]//2
-        img_batch_half = img_batch_half.view(-1, size[0], size[1], size[2])
-        img_batch_half[:, :, n_cut:, :] = 0
-        img_batch_half = img_batch_half.view(-1, np.prod(size))
-
+    img_batch_half[:, indices] = 0
     return img_batch_half
 
 def mse(image0, image1):
@@ -228,4 +221,8 @@ def get_datasets(dataset, size, normalize):
         train_dataset = datasets.CIFAR10(train=True, size=size, normalize=normalize)
         test_dataset = datasets.CIFAR10(train=False, size=size, normalize=normalize)
         img_size = (3, 32, 32)
-    return train_dataset, test_dataset, img_size
+
+    test_size = len(test_dataset)
+    train_size = len(train_dataset) - test_size
+    train_dataset, valid_dataset = random_split(train_dataset, [train_size, test_size])
+    return train_dataset, valid_dataset, test_dataset, img_size

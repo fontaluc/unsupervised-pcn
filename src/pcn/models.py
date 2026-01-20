@@ -82,12 +82,12 @@ class PCModel(nn.Module):
         self.set_input(label_batch)
         self.generation_updates(n_iters, step_tolerance, fixed_preds)
 
-    def recall_batch(self, img_batch_corrupt, n_iters, n_cut, step_tolerance=1e-5, init_std=0.05, fixed_preds=False):
+    def recall_batch(self, img_batch_corrupt, n_iters, indices, step_tolerance=1e-5, init_std=0.05, fixed_preds=False):
         batch_size = img_batch_corrupt.size(0)
         self.reset()
         self.reset_mus(batch_size, init_std)
         self.set_target(img_batch_corrupt)
-        self.recall_updates(n_iters, step_tolerance, n_cut, fixed_preds=fixed_preds)
+        self.recall_updates(n_iters, step_tolerance, indices, fixed_preds=fixed_preds)
 
     def precision_recall_batch(self, img_batch_corrupt, n_iters, n_cut, step_tolerance=1e-5, init_std=0.05, fixed_preds=False):
         batch_size = img_batch_corrupt.size(0)
@@ -239,7 +239,7 @@ class PCModel(nn.Module):
             if (relative_diff < step_tolerance).sum().item():
                 break
         
-    def recall_updates(self, n_iters, step_tolerance, n_cut, fixed_preds=False):
+    def recall_updates(self, n_iters, step_tolerance, indices, fixed_preds=False):
         batch_size = self.mus[0].shape[0]
         self.plot_batch_errors = [[[] for n in range(self.n_nodes)] for m in range(batch_size)]
         self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
@@ -255,7 +255,7 @@ class PCModel(nn.Module):
                 self.mus[l] = self.mus[l] + self.mu_dt * delta       
             # Recall pixels
             delta = - self.errs[-1]
-            self.mus[-1][:, n_cut:] = self.mus[-1][:, n_cut:] + self.mu_dt * delta[:, n_cut:]
+            self.mus[-1][:, indices] = self.mus[-1][:, indices] + self.mu_dt * delta[:, indices]
 
             for n in range(1, self.n_nodes):
                 if not fixed_preds:
