@@ -4,6 +4,7 @@ import torch
 import matplotlib.pyplot as plt
 from pcn.models import PCModel
 from tqdm import tqdm
+import numpy as np
 
 def main(cf):
 
@@ -32,7 +33,7 @@ def main(cf):
             n_ec = n_ec_list[i]
 
             model_name = f"pcn-{dataset}-n_vc={n_vc}-n_ec={n_ec}"
-            nodes = [n_ec, n_vc, 784]
+            nodes = [n_ec, n_vc, np.prod(size)]
 
             model = PCModel(
                 nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
@@ -63,7 +64,7 @@ def main(cf):
             axes[i+1].set_title(rf'$n_2 = {n_ec}$')
             plotting.plot_samples(axes[i+1], model.preds[-1], size)
 
-    fig.savefig(f"outputs/compare_replay.png")
+    fig.savefig(f"outputs/compare_replay_{dataset}.png")
     
 
 if __name__ == "__main__":
