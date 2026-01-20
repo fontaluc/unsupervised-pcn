@@ -115,7 +115,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Script that evaluate the PC model according to different metrics to choose the right number of EC units"
     )
-    parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")s
+    parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
     parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     args = parser.parse_args()
