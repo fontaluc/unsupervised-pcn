@@ -127,6 +127,7 @@ if __name__ == "__main__":
     cf.seed = args.seed
 
     # dataset params
+    cf.dataset = args.dataset
     cf.train_size = None
     cf.test_size = None
     cf.label_scale = None
