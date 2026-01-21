@@ -19,15 +19,15 @@ def main(cf):
     valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size)
 
     if cf.dataset == 'mnist':
-            n_vc = 450
+        cf.n_vc = 450
     elif cf.dataset == 'fmnist':
-        n_vc = 750
+        cf.n_vc = 750
     else:
-        n_vc = 2000
+        cf.n_vc = 2000
 
-    nodes = [cf.n_ec, n_vc, np.prod(size)]
+    nodes = [cf.n_ec, cf.n_vc, np.prod(size)]
         
-    model_name = f"pcn-{cf.dataset}-n_vc={n_vc}-n_ec={cf.n_ec}" if cf.n_ec > 0 else f"pcn-{cf.dataset}-n_vc={n_vc}"
+    model_name = f"pcn-{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}" if cf.n_ec > 0 else f"pcn-{cf.dataset}-n_vc={cf.n_vc}"
     model = PCModel(
         nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
@@ -103,12 +103,12 @@ def main(cf):
     valid_acc = clf.score(X_valid, y_valid)
 
     data = [cf.dataset, cf.n_ec, replay_mse, recall_mse, valid_mse, valid_acc]
-    if os.path.exists("outputs/tune_second_layer.csv"):
-        df = pd.read_csv("outputs/tune_second_layer.csv")
+    if os.path.exists("outputs/eval_two_layers.csv"):
+        df = pd.read_csv("outputs/eval_two_layers.csv")
         df.loc[len(df)] = data
     else:
         df = pd.DataFrame([data], columns=['Dataset', 'EC size', 'Replay error', 'Completion error', 'Validation error', 'Validation accuracy'])
-    df.to_csv('outputs/tune_second_layer.csv', index=False)
+    df.to_csv('outputs/eval_two_layers.csv', index=False)
 
 if __name__ == "__main__":
     
