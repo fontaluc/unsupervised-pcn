@@ -217,21 +217,21 @@ def sample_from_latent(z, n):
     eps = np.random.randn(n, z.shape[1])
     return torch.from_numpy(mu + eps @ L.T)
 
-def get_datasets(dataset, size, normalize):
+def get_datasets(dataset, train_size, test_size, normalize, generator):
     if dataset == 'mnist':
-        train_dataset = datasets.MNIST(train=True, size=size, normalize=normalize)
-        test_dataset = datasets.MNIST(train=False, size=size, normalize=normalize)
+        train_dataset = datasets.MNIST(train=True, size=train_size, normalize=normalize)
+        test_dataset = datasets.MNIST(train=False, size=test_size, normalize=normalize)
         img_size = (28, 28)
     elif dataset == 'fmnist':
-        train_dataset = datasets.FashionMNIST(train=True, size=size, normalize=normalize)
-        test_dataset = datasets.FashionMNIST(train=False, size=size, normalize=normalize)
+        train_dataset = datasets.FashionMNIST(train=True, size=train_size, normalize=normalize)
+        test_dataset = datasets.FashionMNIST(train=False, size=test_size, normalize=normalize)
         img_size = (28, 28)
     else:
-        train_dataset = datasets.CIFAR10(train=True, size=size, normalize=normalize)
-        test_dataset = datasets.CIFAR10(train=False, size=size, normalize=normalize)
+        train_dataset = datasets.CIFAR10(train=True, size=train_size, normalize=normalize)
+        test_dataset = datasets.CIFAR10(train=False, size=test_size, normalize=normalize)
         img_size = (3, 32, 32)
 
     test_size = len(test_dataset)
     train_size = len(train_dataset) - test_size
-    train_dataset, valid_dataset = random_split(train_dataset, [train_size, test_size])
+    train_dataset, valid_dataset = random_split(train_dataset, [train_size, test_size], generator=generator)
     return train_dataset, valid_dataset, test_dataset, img_size

@@ -19,8 +19,8 @@ def main(cf):
 
     for dataset in dataset_names:
         
-        train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(dataset, cf.train_size, cf.normalize)
-        valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size)
+        train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.normalize, g)
+        valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size, utils.seed_worker, g)
 
         if dataset == 'mnist':
             n_vc = 450

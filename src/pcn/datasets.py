@@ -53,8 +53,15 @@ class FashionMNIST(datasets.FashionMNIST):
         self.targets = self.targets[0:size]
 
 
-def get_dataloader(dataset, batch_size): 
-    dataloader = data.DataLoader(dataset, batch_size, shuffle=True, drop_last=True) # makes batches of samples individually obtained with __getitem__
+def get_dataloader(dataset, batch_size, worker_init_fn, generator): 
+    # make batches of samples individually obtained with __getitem__
+    dataloader = data.DataLoader(
+        dataset, 
+        batch_size, 
+        shuffle=True, 
+        drop_last=True, 
+        worker_init_fn=worker_init_fn, 
+        generator=generator) 
     return list(map(_preprocess_batch, dataloader)) # list of (data, label) batches
 
 def _preprocess_batch(batch):

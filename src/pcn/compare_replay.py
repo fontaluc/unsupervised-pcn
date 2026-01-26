@@ -19,8 +19,8 @@ def main(cf):
 
     for dataset in dataset_names:
         
-        train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(dataset, cf.train_size, cf.normalize)
-        train_loader = datasets.get_dataloader(train_dataset, cf.batch_size)
+        train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.normalize, g)
+        train_loader = datasets.get_dataloader(train_dataset, cf.batch_size, utils.seed_worker, g)
         img_batch, label_batch = train_loader[0]
 
         if dataset == 'mnist':

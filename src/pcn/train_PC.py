@@ -24,10 +24,10 @@ def main(cf):
     g = torch.Generator()
     g.manual_seed(cf.seed)
 
-    train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.normalize)
+    train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.normalize, g)
 
-    train_loader = datasets.get_dataloader(train_dataset, cf.batch_size)
-    valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size)
+    train_loader = datasets.get_dataloader(train_dataset, cf.batch_size, utils.seed_worker, g)
+    valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size, utils.seed_worker, g)
 
     nodes = [cf.n_ec, cf.n_vc, np.prod(size)]
     model = PCModel(
