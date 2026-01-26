@@ -13,23 +13,7 @@ def main(cf):
     g = torch.Generator()
     g.manual_seed(cf.seed)
 
-    if cf.dataset == 'mnist':
-        train_dataset = datasets.MNIST(train=True, size=cf.train_size, normalize=cf.normalize)
-        test_dataset = datasets.MNIST(train=False, size=cf.test_size, normalize=cf.normalize)
-        size = (28, 28)
-    elif cf.dataset == 'fmnist':
-        train_dataset = datasets.FashionMNIST(train=True, size=cf.train_size, normalize=cf.normalize)
-        test_dataset = datasets.FashionMNIST(train=False, size=cf.test_size, normalize=cf.normalize)
-        size = (28, 28)
-    else:
-        train_dataset = datasets.CIFAR10(train=True, size=cf.train_size, normalize=cf.normalize)
-        test_dataset = datasets.CIFAR10(train=False, size=cf.test_size, normalize=cf.normalize)
-        size = (3, 32, 32)
-    
-    test_size = len(test_dataset)
-    train_size = len(train_dataset) - test_size
-    train_dataset, valid_dataset = random_split(train_dataset, [train_size, test_size])
-
+    train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.normalize)
     valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size)
 
     nodes = [cf.n_vc, np.prod(size)]

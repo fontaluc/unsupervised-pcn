@@ -22,9 +22,9 @@ def main(cf):
         train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(dataset, cf.train_size, cf.normalize)
         valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size)
 
-        if cf.dataset == 'mnist':
+        if dataset == 'mnist':
             n_vc = 450
-        elif cf.dataset == 'fmnist':
+        elif dataset == 'fmnist':
             n_vc = 750
         else:
             n_vc = 2000

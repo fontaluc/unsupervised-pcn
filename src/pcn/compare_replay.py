@@ -23,7 +23,12 @@ def main(cf):
         train_loader = datasets.get_dataloader(train_dataset, cf.batch_size)
         img_batch, label_batch = train_loader[0]
 
-        n_vc = 750 if dataset == 'fmnist' else 2000
+        if dataset == 'mnist':
+            n_vc = 450
+        elif dataset == 'fmnist':
+            n_vc = 750
+        else:
+            n_vc = 2000
 
         fig, axes = plt.subplots(1, K+1, figsize = (5*(K+1), 5))
         axes[0].set_title('Observation')
@@ -64,7 +69,7 @@ def main(cf):
             axes[i+1].set_title(rf'$n_2 = {n_ec}$')
             plotting.plot_samples(axes[i+1], model.preds[-1], size)
 
-    fig.savefig(f"outputs/compare_replay_{dataset}.png")
+        fig.savefig(f"outputs/compare_replay_{dataset}.png")
     
 
 if __name__ == "__main__":

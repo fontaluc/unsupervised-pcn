@@ -25,7 +25,9 @@ def main(cf):
     else:
         cf.n_vc = 2000
 
-    nodes = [cf.n_ec, cf.n_vc, np.prod(size)]
+    nodes = [cf.n_vc, np.prod(size)]
+    if cf.n_ec > 0:
+        nodes = [cf.n_ec] + nodes
         
     model_name = f"pcn-{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}" if cf.n_ec > 0 else f"pcn-{cf.dataset}-n_vc={cf.n_vc}"
     model = PCModel(
