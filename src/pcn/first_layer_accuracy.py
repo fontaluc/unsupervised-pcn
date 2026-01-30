@@ -7,6 +7,7 @@ import os
 from sklearn.linear_model import LogisticRegression
 import pandas as pd
 import numpy as np
+from sklearn import preprocessing
 
 def main(cf):
 
@@ -42,6 +43,8 @@ def main(cf):
     )
     X_train = activities_train[1]
     y_train = labels_train
+    scaler = preprocessing.StandardScaler().fit(X_train)
+    X_train = scaler.transform(X_train)
     clf = LogisticRegression(random_state=cf.seed).fit(X_train, y_train)
 
     activities_valid, labels_valid = plotting.infer_latents(
@@ -49,6 +52,7 @@ def main(cf):
     )
     X_valid = activities_valid[1]
     y_valid = labels_valid
+    X_valid = scaler.transform(X_valid)
     valid_acc = clf.score(X_valid, y_valid)
     
     idx = df.index[(df['Dataset'] == cf.dataset) & (df['EC size'] == cf.n_ec)]
