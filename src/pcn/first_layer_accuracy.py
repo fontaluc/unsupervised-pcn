@@ -3,8 +3,7 @@ from tqdm import tqdm
 from pcn import utils, plotting, datasets
 import torch
 from pcn.models import PCModel
-import os
-from sklearn.linear_model import LogisticRegression
+from sklearn import svm
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing
@@ -37,32 +36,34 @@ def main(cf):
     )
     model.load_state_dict(torch.load(f"models/{model_name}.pt", map_location=utils.DEVICE, weights_only=True))
 
-    # Classification accuracy
-    activities_train, labels_train = plotting.infer_latents(
-        model, train_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
-    )
-    X_train = activities_train[1]
-    y_train = labels_train
-    scaler = preprocessing.StandardScaler().fit(X_train)
-    X_train = scaler.transform(X_train)
-    clf = LogisticRegression(random_state=cf.seed).fit(X_train, y_train)
+    for l in range(model.n_layers):
+        # Classification accuracy
+        activities_train, labels_train = plotting.infer_latents(
+            model, train_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
+        )
+        X_train = activities_train[l]
+        y_train = labels_train
+        scaler = preprocessing.StandardScaler().fit(X_train)
+        X_train = scaler.transform(X_train)
+        clf = svm.LinearSVC().fit(X_train, y_train)
 
-    activities_valid, labels_valid = plotting.infer_latents(
-        model, valid_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
-    )
-    X_valid = activities_valid[1]
-    y_valid = labels_valid
-    X_valid = scaler.transform(X_valid)
-    valid_acc = clf.score(X_valid, y_valid)
-    
-    idx = df.index[(df['Dataset'] == cf.dataset) & (df['EC size'] == cf.n_ec)]
-    df.loc[idx, ['Validation accuracy 1']] = valid_acc
+        activities_valid, labels_valid = plotting.infer_latents(
+            model, valid_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
+        )
+        X_valid = activities_valid[l]
+        y_valid = labels_valid
+        X_valid = scaler.transform(X_valid)
+        valid_acc = clf.score(X_valid, y_valid)
+        
+        idx = df.index[(df['Dataset'] == cf.dataset) & (df['EC size'] == cf.n_ec)]
+        df.loc[idx, [f'Validation accuracy {l}']] = valid_acc
+
     df.to_csv('outputs/eval_two_layers.csv', index=False)
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(
-        description="Script that evaluates the classification accuracy of the first layer of a 2-layer PCN."
+        description="Script that evaluates the classification accuracy of the hidden layers of a PCN."
     )
     parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
     parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
