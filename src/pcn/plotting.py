@@ -207,7 +207,6 @@ def infer_latents(model, dataloader, n_iters, step_tolerance, init_std, fixed_pr
     # Append neuron activities and labels of all batches
     with torch.no_grad():
         for x, y in dataloader:
-            x = utils.set_tensor(x)
             model.test_batch(
                 x, n_iters, step_tolerance, init_std, fixed_preds=fixed_preds
             )            
