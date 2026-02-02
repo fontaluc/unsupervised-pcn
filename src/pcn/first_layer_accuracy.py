@@ -45,7 +45,7 @@ def main(cf):
         y_train = labels_train
         scaler = preprocessing.StandardScaler().fit(X_train)
         X_train = scaler.transform(X_train)
-        clf = svm.LinearSVC().fit(X_train, y_train)
+        clf = svm.LinearSVC(verbose=1, random_state=cf.seed).fit(X_train, y_train)
 
         activities_valid, labels_valid = plotting.infer_latents(
             model, valid_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
