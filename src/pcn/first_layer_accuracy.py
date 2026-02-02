@@ -7,14 +7,13 @@ from sklearn import svm
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing
+from filelock import FileLock
 
 def main(cf):
 
     utils.seed(cf.seed)
     g = torch.Generator()
     g.manual_seed(cf.seed)
-
-    df = pd.read_csv("outputs/eval_two_layers.csv")
 
     train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.test_size, cf.normalize, g)
 
@@ -54,11 +53,15 @@ def main(cf):
         y_valid = labels_valid
         X_valid = scaler.transform(X_valid)
         valid_acc = clf.score(X_valid, y_valid)
-        
-        idx = df.index[(df['Dataset'] == cf.dataset) & (df['EC size'] == cf.n_ec)]
-        df.loc[idx, [f'Validation accuracy {l}']] = valid_acc
 
-    df.to_csv('outputs/eval_two_layers.csv', index=False)
+        # Lock file to prevent overwriting when multiple processes run
+        with FileLock("eval_two_layers.csv.lock"): 
+            print('Lock acquired.')
+            with open('outputs/eval_two_layers.csv') as f:
+                df = pd.read_csv(f)
+                idx = df.index[(df['Dataset'] == cf.dataset) & (df['EC size'] == cf.n_ec)]
+                df.loc[idx, [f'Validation accuracy {l}']] = valid_acc
+                df.to_csv('outputs/eval_two_layers.csv', index=False)
 
 if __name__ == "__main__":
     

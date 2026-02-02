@@ -30,7 +30,7 @@ def main(cf):
             n_vc = 2000
 
         # Compute indices corresponding to the bottom half of images in the flattened tensor
-        indices = utils.get_indices(size)
+        indices = utils.get_mask_indices(size)
         
         test_size = 5
         img_batch, label_batch = valid_loader[0]

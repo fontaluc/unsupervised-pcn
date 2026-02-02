@@ -67,7 +67,7 @@ def main(cf):
         replay_mse = float("nan")
 
     ## Pattern completion performance
-    indices = utils.get_indices(size)
+    indices = utils.get_mask_indices(size)
     recall_mse = 0 
     with torch.no_grad():
         for img_batch, label_batch in tqdm(valid_loader):
