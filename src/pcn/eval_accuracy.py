@@ -31,7 +31,7 @@ def main(cf):
     if cf.n_ec > 0:
         nodes = [cf.n_ec] + nodes
         
-    model_name = f"pcn-{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}"
+    model_name = f"pcn-{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}" if cf.n_ec > 0 else f"pcn-{cf.dataset}-n_vc={cf.n_vc}"
     model = PCModel(
         nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
