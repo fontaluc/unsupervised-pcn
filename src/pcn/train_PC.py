@@ -14,7 +14,7 @@ import numpy as np
     
 def main(cf):
 
-    model_name = f"{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}-n_ec={cf.n_ec}"
+    model_name = f"{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}-act_fn={cf.act_fn}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}-n_ec={cf.n_ec}-act_fn={cf.act_fn}"
     os.environ["WANDB__SERVICE_WAIT"] = "300" # sometimes wandb takes more than 30s (the default time limit) to start
     wandb.login()
     wandb.init(project="unsupervised-pcn", config=cf, name=model_name)
@@ -105,6 +105,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=1e-5, help="Enter learning rate")
     parser.add_argument("--n_vc", type=int, default=450, help="Enter size of VC layer")
     parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
+    parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='sigmoid', help="Enter activation function")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--scheduler", action='store_true', help="Enable learning rate scheduler")
     args = parser.parse_args()
@@ -145,7 +146,7 @@ if __name__ == "__main__":
     cf.use_bias = True
     cf.n_vc = args.n_vc
     cf.n_ec = args.n_ec
-    cf.act_fn = utils.Tanh()
+    cf.act_fn = args.act_fn
     cf.kaiming_init = False
 
     main(cf)

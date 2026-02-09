@@ -10,13 +10,13 @@ class PCModel(nn.Module):
         super().__init__()
         self.nodes = nodes
         self.mu_dt = mu_dt
-
+        self.act_fn = act_fn
         self.n_nodes = len(nodes)
         self.n_layers = len(nodes) - 1
 
         self.layers = []
         for l in range(self.n_layers):
-            _act_fn = utils.Linear() if (l == self.n_layers - 1) else act_fn
+            _act_fn = utils.Linear() if (l == self.n_layers - 1) else self.act_func(self.act_fn)
             _use_bias = False if (l == self.n_layers - 1) else use_bias
 
             layer = FCLayer(
@@ -28,6 +28,18 @@ class PCModel(nn.Module):
             )
             self.layers.append(layer)
         self.layers = nn.ModuleList(self.layers)
+
+    def act_func(act_fn):
+        if act_fn == 'sigmoid':
+            return utils.Sigmoid()
+        elif act_fn == 'tanh':
+            return utils.Tanh()
+        elif act_fn == 'relu':
+            return utils.ReLU()
+        elif act_fn == 'linear':
+            return utils.Linear()
+        else:
+            raise ValueError(f'Unsupported activation function: {act_fn}')
 
     def reset(self):
         self.preds = [[] for _ in range(self.n_nodes)]

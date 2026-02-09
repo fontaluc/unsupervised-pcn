@@ -187,13 +187,13 @@ def compute_ratios(metrics: float, object: EarlyStopping | LRScheduler):
     low_ratio = metrics/object.max
     return better_ratio, low_ratio
 
-def get_mask_indices(size):
+def get_mask_indices(size, alpha=0.5):
     if len(size) == 3:
             C, H, W = size
-            indices = torch.tensor([i*H*W + j*H + k for i in range(C) for j in range(H//2, H) for k in range(W)])
+            indices = torch.tensor([i*H*W + j*H + k for i in range(C) for j in range(int(alpha*H), H) for k in range(W)])
     else:
         H, W = size
-        indices = torch.arange(H*W//2, H*W)
+        indices = torch.arange(int(alpha*H), H*W)
     return indices
 
 def mask_image(img_batch, indices):
