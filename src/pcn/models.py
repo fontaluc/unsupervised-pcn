@@ -29,7 +29,7 @@ class PCModel(nn.Module):
             self.layers.append(layer)
         self.layers = nn.ModuleList(self.layers)
 
-    def act_func(act_fn):
+    def act_func(self, act_fn):
         if act_fn == 'sigmoid':
             return utils.Sigmoid()
         elif act_fn == 'tanh':
