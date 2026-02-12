@@ -5,6 +5,7 @@ from pcn import utils
 import argparse
 from pcn import datasets
 import numpy as np
+from filelock import FileLock
     
 def main(cf):
 
@@ -28,8 +29,11 @@ def main(cf):
     # Evaluate validation error
     valid_error = trainer.test(valid_loader, cf.n_max_iters, cf.fixed_preds_test)
     mode = 'a' if os.path.exists(f"outputs/valid_error_positive={cf.positive}.txt") else 'w'
-    with open(f"outputs/valid_error_positive={cf.positive}.txt", mode) as f:
-        f.write(f"{cf.dataset}, {cf.n_vc}, {valid_error} \n")
+    # Lock file to prevent overwriting when multiple processes run
+    with FileLock(f"valid_error_positive={cf.positive}.txt.lock"):
+        print('Lock acquired.')
+        with open(f"outputs/valid_error_positive={cf.positive}.txt", mode) as f:
+            f.write(f"{cf.dataset}, {cf.n_vc}, {valid_error} \n")
 
 if __name__ == "__main__":
 
