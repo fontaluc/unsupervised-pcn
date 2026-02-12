@@ -108,6 +108,7 @@ if __name__ == "__main__":
     parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='sigmoid', help="Enter activation function")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--scheduler", action='store_true', help="Enable learning rate scheduler")
+    parser.add_argument("--positive", action='store_true', help="Enable non-negative states")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -148,5 +149,6 @@ if __name__ == "__main__":
     cf.n_ec = args.n_ec
     cf.act_fn = args.act_fn
     cf.kaiming_init = False
+    cf.positive = args.positive
 
     main(cf)

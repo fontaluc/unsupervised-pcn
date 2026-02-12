@@ -57,7 +57,6 @@ class Sigmoid(Activation):
     def deriv(self, inp):
         return torch.sigmoid(inp)*(1 - torch.sigmoid(inp))
 
-
 def seed(seed):
     torch.manual_seed(seed)
     if torch.cuda.is_available():

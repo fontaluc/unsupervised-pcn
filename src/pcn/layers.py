@@ -42,6 +42,41 @@ class Layer(nn.Module):
             bound = 1 / math.sqrt(fan_in)
             nn.init.uniform_(self.bias, -bound, bound)
 
+class FCPlusLayer(Layer):
+    def __init__(
+        self, 
+        in_size, 
+        out_size, 
+        act_fn, 
+        use_bias=False, 
+        kaiming_init=False 
+    ):
+        super().__init__(
+            in_size, 
+            out_size, 
+            act_fn, 
+            use_bias, 
+            kaiming_init)
+        self.use_bias = use_bias
+        self.theta_meta = 0
+        self.inp = None
+
+    def forward(self, inp):
+        self.inp = inp.clone()
+        out = torch.matmul(self.act_fn(self.inp), self.weights) + self.bias
+        return out
+
+    def backward(self, err):
+        fn_deriv = self.act_fn.deriv(self.inp)
+        out = fn_deriv * torch.matmul(err, self.weights.T)
+        return out
+
+    def update_gradient(self, err):
+        delta = torch.matmul(self.act_fn(self.inp).T, err)        
+        self.grad["weights"] = delta
+        if self.use_bias:
+            self.grad["bias"] = torch.sum(err, axis=0)
+
 class FCLayer(Layer):
     def __init__(
         self, 

@@ -1,32 +1,44 @@
 from pcn import utils
-from pcn.layers import FCLayer
+from pcn.layers import FCLayer, FCPlusLayer
 import torch
 from torch import nn
 import numpy as np
 import wandb
 
 class PCModel(nn.Module):
-    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False):
+    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False, positive=False):
         super().__init__()
         self.nodes = nodes
         self.mu_dt = mu_dt
         self.act_fn = act_fn
         self.n_nodes = len(nodes)
         self.n_layers = len(nodes) - 1
+        
+        if not positive:
+            self.layers = []
+            for l in range(self.n_layers):
+                _act_fn = utils.Linear() if (l == self.n_layers - 1) else self.act_func(self.act_fn)
+                _use_bias = False if (l == self.n_layers - 1) else use_bias
 
-        self.layers = []
-        for l in range(self.n_layers):
-            _act_fn = utils.Linear() if (l == self.n_layers - 1) else self.act_func(self.act_fn)
-            _use_bias = False if (l == self.n_layers - 1) else use_bias
-
-            layer = FCLayer(
-                in_size=nodes[l],
-                out_size=nodes[l + 1],
-                act_fn=_act_fn,
-                use_bias=_use_bias,
-                kaiming_init=kaiming_init
-            )
-            self.layers.append(layer)
+                layer = FCLayer(
+                    in_size=nodes[l],
+                    out_size=nodes[l + 1],
+                    act_fn=_act_fn,
+                    use_bias=_use_bias,
+                    kaiming_init=kaiming_init
+                )
+                self.layers.append(layer)
+        else:
+            self.layers = [
+                FCPlusLayer(
+                    in_size=nodes[l],
+                    out_size=nodes[l + 1],
+                    act_fn=self.act_func(self.act_fn),
+                    use_bias=use_bias,
+                    kaiming_init=kaiming_init
+                )
+                for l in range(self.n_layers)
+            ]
         self.layers = nn.ModuleList(self.layers)
 
     def act_func(self, act_fn):

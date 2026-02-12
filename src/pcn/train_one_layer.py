@@ -1,6 +1,5 @@
 from pcn.models import PCModel, PCTrainer
 import torch
-from torch.utils.data import random_split
 from pcn import optim
 import os
 from pcn import utils
@@ -17,20 +16,20 @@ def main(cf):
     g = torch.Generator()
     g.manual_seed(cf.seed)
 
-    model_name = f"{cf.dataset}-n_vc={cf.n_vc}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}"
+    model_name = f"{cf.dataset}-n_vc={cf.n_vc}-positive={cf.positive}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}-positive={cf.positive}"
     os.environ["WANDB__SERVICE_WAIT"] = "300" # sometimes wandb takes more than 30s (the default time limit) to start
     wandb.login()
     wandb.init(project="unsupervised-pcn", config=cf, name=model_name)
     location = wandb.run.dir
 
-    train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.normalize, g)
+    train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.test_size, cf.normalize, g)
 
     train_loader = datasets.get_dataloader(train_dataset, cf.batch_size, utils.seed_worker, g)
     valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size, utils.seed_worker, g)
 
     nodes = [cf.n_vc, np.prod(size)]
     model = PCModel(
-        nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
+        nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init, positive=cf.positive
     )
     
     if cf.scheduler:
@@ -100,6 +99,8 @@ if __name__ == "__main__":
     parser.add_argument("--n_epochs", type=int, default=200, help="Enter number of epochs")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--scheduler", action='store_true', help="Enable learning rate scheduler")
+    parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='sigmoid', help="Enter activation function")
+    parser.add_argument("--positive", action='store_true', help="Enable non-negative states")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -138,7 +139,8 @@ if __name__ == "__main__":
     # model params
     cf.use_bias = True
     cf.kaiming_init = False
+    cf.positive = args.positive
     cf.n_vc = args.n_vc
-    cf.act_fn = utils.Tanh()
+    cf.act_fn = args.act_fn
 
     main(cf)
