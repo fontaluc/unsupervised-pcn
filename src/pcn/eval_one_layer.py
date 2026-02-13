@@ -23,8 +23,13 @@ def main(cf):
         model_name += "-positive"
     
     model = PCModel(
-        nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
-    )
+        nodes=nodes, 
+        mu_dt=cf.mu_dt, 
+        act_fn=cf.act_fn, 
+        use_bias=cf.use_bias, 
+        kaiming_init=cf.kaiming_init, 
+        positive=cf.positive
+    )    
     model.load_state_dict(torch.load(f"models/{model_name}.pt", map_location=utils.DEVICE, weights_only=True))
 
     trainer = PCTrainer(model)
