@@ -104,6 +104,7 @@ if __name__ == "__main__":
     parser.add_argument("--scheduler", action='store_true', help="Enable learning rate scheduler")
     parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='sigmoid', help="Enter activation function")
     parser.add_argument("--positive", action='store_true', help="Enable non-negative states")
+    parser.add_argument("--log", action='store_true', help="Enable activations and gradients logging")
     args = parser.parse_args()
 
     # Hyperparameters dict
@@ -112,7 +113,7 @@ if __name__ == "__main__":
     # experiment params
     cf.seed = args.seed
     cf.n_epochs = args.n_epochs
-    cf.log = False
+    cf.log = True
     cf.gamma = 0.99
 
     # dataset params
