@@ -6,13 +6,14 @@ import numpy as np
 import wandb
 
 class PCModel(nn.Module):
-    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False, positive=False):
+    def __init__(self, nodes, mu_dt, act_fn, use_bias=False, kaiming_init=False, positive=False, device=utils.DEVICE):
         super().__init__()
         self.nodes = nodes
         self.mu_dt = mu_dt
         self.act_fn = act_fn
         self.n_nodes = len(nodes)
         self.n_layers = len(nodes) - 1
+        self.device = device
         
         if not positive:
             self.layers = []
@@ -25,7 +26,8 @@ class PCModel(nn.Module):
                     out_size=nodes[l + 1],
                     act_fn=_act_fn,
                     use_bias=_use_bias,
-                    kaiming_init=kaiming_init
+                    kaiming_init=kaiming_init,
+                    device=device
                 )
                 self.layers.append(layer)
         else:
@@ -35,7 +37,8 @@ class PCModel(nn.Module):
                     out_size=nodes[l + 1],
                     act_fn=self.act_func(self.act_fn),
                     use_bias=use_bias,
-                    kaiming_init=kaiming_init
+                    kaiming_init=kaiming_init,
+                    device=device
                 )
                 for l in range(self.n_layers)
             ]
@@ -61,7 +64,7 @@ class PCModel(nn.Module):
     def reset_mus(self, batch_size, init_std):
         for l in range(self.n_layers):
             self.mus[l] = utils.set_tensor(
-                torch.empty(batch_size, self.layers[l].in_size).normal_(mean=0, std=init_std)
+                torch.empty(batch_size, self.layers[l].in_size).normal_(mean=0, std=init_std), self.device
             )
 
     def set_target(self, target):
@@ -121,7 +124,7 @@ class PCModel(nn.Module):
         self.precision_recall_updates(n_iters, step_tolerance, n_cut, fixed_preds=fixed_preds)
 
     def updates(self, n_iters, fixed_preds=False):
-        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
+        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape), self.device)
         self.errs[0] = self.mus[0] - self.preds[0]
         for n in range(1, self.n_nodes):
             self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
@@ -140,7 +143,7 @@ class PCModel(nn.Module):
     def replay_updates(self, n_iters, step_tolerance, fixed_preds=False):
         batch_size = self.mus[0].shape[0]
         self.plot_batch_errors = [[[] for n in range(self.n_nodes)] for m in range(batch_size)]
-        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
+        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape), self.device)
         self.errs[0] = self.mus[0] - self.preds[0]
         for n in range(1, self.n_nodes - 1):
             self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
@@ -174,7 +177,7 @@ class PCModel(nn.Module):
     def precision_recall_updates(self, n_iters, step_tolerance, n_cut, fixed_preds=False):
         batch_size = self.mus[0].shape[0]
         self.plot_batch_errors = [[[] for n in range(self.n_nodes)] for m in range(batch_size)]
-        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
+        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape), self.device)
         self.errs[0] = self.mus[0] - self.preds[0]
         for n in range(1, self.n_nodes):
             self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
@@ -204,7 +207,7 @@ class PCModel(nn.Module):
     def generation_updates(self, n_iters, step_tolerance, fixed_preds=False):
         batch_size = self.mus[0].shape[0]
         self.plot_batch_errors = [[[] for n in range(self.n_nodes)] for m in range(batch_size)]
-        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
+        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape), self.device)
         self.errs[0] = self.mus[0] - self.preds[0]
         for n in range(1, self.n_nodes - 1):
             self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
@@ -238,7 +241,7 @@ class PCModel(nn.Module):
     def test_updates(self, n_iters, step_tolerance, fixed_preds=False):
         batch_size = self.mus[0].shape[0]
         self.plot_batch_errors = [[[] for n in range(self.n_nodes)] for m in range(batch_size)]
-        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
+        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape), self.device)
         self.errs[0] = self.mus[0] - self.preds[0]
         for n in range(1, self.n_nodes):
             self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])
@@ -266,7 +269,7 @@ class PCModel(nn.Module):
     def recall_updates(self, n_iters, step_tolerance, indices, fixed_preds=False):
         batch_size = self.mus[0].shape[0]
         self.plot_batch_errors = [[[] for n in range(self.n_nodes)] for m in range(batch_size)]
-        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape))
+        self.preds[0] = utils.set_tensor(torch.zeros(self.mus[0].shape), self.device)
         self.errs[0] = self.mus[0] - self.preds[0]
         for n in range(1, self.n_nodes):
             self.preds[n] = self.layers[n - 1].forward(self.mus[n - 1])

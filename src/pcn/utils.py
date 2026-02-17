@@ -69,8 +69,8 @@ def seed_worker():
     np.random.seed(worker_seed)
     random.seed(worker_seed)
 
-def set_tensor(tensor):
-    return tensor.to(DEVICE).float()
+def set_tensor(tensor, device=DEVICE):
+    return tensor.to(device).float()
 
 
 def flatten_array(array):

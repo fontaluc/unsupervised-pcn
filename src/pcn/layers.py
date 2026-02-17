@@ -5,7 +5,7 @@ import math
 
 class Layer(nn.Module):
     def __init__(
-        self, in_size, out_size, act_fn, use_bias=False, kaiming_init=False
+        self, in_size, out_size, act_fn, use_bias=False, kaiming_init=False, device=utils.DEVICE
     ):
         super().__init__()
         self.in_size = in_size
@@ -13,9 +13,10 @@ class Layer(nn.Module):
         self.act_fn = act_fn
         self.use_bias = use_bias
         self.kaiming_init = kaiming_init
+        self.device = device
 
-        self.weights = nn.Parameter(utils.set_tensor(torch.empty((self.in_size, self.out_size))))
-        self.bias = nn.Parameter(utils.set_tensor(torch.zeros((self.out_size))))
+        self.weights = nn.Parameter(utils.set_tensor(torch.empty((self.in_size, self.out_size)), self.device))
+        self.bias = nn.Parameter(utils.set_tensor(torch.zeros((self.out_size)), self.device))
         self._reset_grad()
 
         if kaiming_init:
@@ -49,14 +50,16 @@ class FCPlusLayer(Layer):
         out_size, 
         act_fn, 
         use_bias=False, 
-        kaiming_init=False 
+        kaiming_init=False,
+        device=utils.DEVICE
     ):
         super().__init__(
             in_size, 
             out_size, 
             act_fn, 
             use_bias, 
-            kaiming_init)
+            kaiming_init,
+            device)
         self.use_bias = use_bias
         self.theta_meta = 0
         self.inp = None
@@ -84,14 +87,16 @@ class FCLayer(Layer):
         out_size, 
         act_fn, 
         use_bias=False, 
-        kaiming_init=False 
+        kaiming_init=False,
+        device=utils.DEVICE
     ):
         super().__init__(
             in_size, 
             out_size, 
             act_fn, 
             use_bias, 
-            kaiming_init)
+            kaiming_init,
+            device)
         self.use_bias = use_bias
         self.theta_meta = 0
         self.inp = None
