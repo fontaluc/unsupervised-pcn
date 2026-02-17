@@ -21,7 +21,7 @@ def main(cf):
 
     nodes = [cf.n_vc, np.prod(size)]
     
-    model_name = f"pcn-{cf.dataset}-n_vc={cf.n_vc}" if cf.train_size == None else f"pcn-{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}"
+    model_name = f"{cf.dataset}-n_vc={cf.n_vc}-act_fn={cf.act_fn}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}-act_fn={cf.act_fn}"
     if cf.positive:
         model_name += "-positive"    
     
