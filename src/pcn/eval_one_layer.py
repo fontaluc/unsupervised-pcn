@@ -34,7 +34,7 @@ def main(cf):
         positive=cf.positive,
         device=device
     )    
-    model.load_state_dict(torch.load(f"models/{model_name}.pt", map_location=device, weights_only=True))
+    model.load_state_dict(torch.load(f"models/pcn-{model_name}.pt", map_location=device, weights_only=True))
 
     trainer = PCTrainer(model)
 
