@@ -37,10 +37,11 @@ def main(cf):
     train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(
         cf.dataset, 
         cf.train_size, 
-        cf.test_size, 
-        cf.n_classes, 
+        cf.test_size,  
         cf.normalize, 
-        g)
+        g,
+        cf.n_classes
+        )
 
     train_loader = datasets.get_dataloader(train_dataset, cf.batch_size, utils.seed_worker, g)
     valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size, utils.seed_worker, g)
