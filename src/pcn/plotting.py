@@ -14,13 +14,10 @@ from pcn import utils
 import time
 import tempfile
 
-def plot_samples(ax, x, size=(28, 28)):
+def plot_samples(ax, x, size=(1, 28, 28)):
     x = x.to('cpu')
     nrow = int(np.sqrt(x.size(0)))
-    if len(size) == 2: # grayscale
-        x_grid = make_grid(x.view(-1, 1, size[0], size[1]), nrow=nrow).permute(1, 2, 0)
-    else: # color
-        x_grid = make_grid(x.view(-1, size[0], size[1], size[2]), nrow=nrow).permute(1, 2, 0)
+    x_grid = make_grid(x.view(-1, size[0], size[1], size[2]), nrow=nrow).permute(1, 2, 0)
     ax.imshow(x_grid)
     ax.axis('off')
 
@@ -66,7 +63,7 @@ def visualize_latent(ax, z, y, markers='o', tsne=True):
         print(f"Could not generate the plot of the latent samples because of exception")
         print(e)
 
-def log_reconstruction(x, model, epoch, size=(28, 28)):
+def log_reconstruction(x, model, epoch, size=(1, 28, 28)):
 
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
         tmp_img = tmp_file.name  # Get unique file name
@@ -123,11 +120,11 @@ def log_latents(model, y, epoch):
     wandb.log({'latents': wandb.Image(tmp_img), 'epoch': epoch})
     os.remove(tmp_img)
 
-def log_plots(model, x, y, epoch, size=(28, 28)):
+def log_plots(model, x, y, epoch, size=(1, 28, 28)):
     log_reconstruction(x, model, epoch, size)
     log_latents(model, y, epoch)
 
-def make_pc_plots(model, x, y, training_errors, validation_errors, weights, size=(28, 28), tmp_img="tmp_pc_out.png"):
+def make_pc_plots(model, x, y, training_errors, validation_errors, weights, size=(1, 28, 28), tmp_img="tmp_pc_out.png"):
     fig, axes = plt.subplots(model.n_nodes + 1, 4, figsize=(5*4, 5*(model.n_nodes + 1)), squeeze=False)
     for n in range(model.n_nodes):
         axes[n, 0].set_ylabel(f'Level {n}')
@@ -187,14 +184,14 @@ def make_pc_plots(model, x, y, training_errors, validation_errors, weights, size
     except Exception as e:
         print(f"Warning: An unexpected error occurred while removing '{tmp_img}': {e}")
 
-def plot_levels(activities, labels, markers='o', tsne=True, vertical=True):    
+def plot_levels(activities, labels, markers='o', tsne=True, horizontal=False):    
     n_nodes = len(activities)
-    if vertical:
-        fig, axes = plt.subplots(n_nodes, 1, figsize=(5, 5*n_nodes), constrained_layout=True)
-    else:
+    if horizontal:
         fig, axes = plt.subplots(1, n_nodes, figsize=(5*n_nodes, 5), constrained_layout=True)
+    else:        
+        fig, axes = plt.subplots(n_nodes, 1, figsize=(5, 5*n_nodes), constrained_layout=True)
     for n in range(n_nodes):
-        i = n_nodes - 1 - n if vertical else n
+        i = n if horizontal else n_nodes - 1 - n
         axes[n].set_xlabel(f'Level {i}')
         y = torch.Tensor(labels)
         z = torch.Tensor(activities[i])
@@ -215,12 +212,14 @@ def infer_latents(model, dataloader, n_iters, step_tolerance, init_std, fixed_pr
             labels += y.tolist()
     return activities, labels
 
-def visualize_samples(model, cf, activities_test, labels_test, ec_batch, labels, size=(28, 28)):
+def visualize_samples(model, cf, activities_test, labels_test, ec_batch, labels, size=(28, 28), horizontal=False):
     activities = [[] for _ in range(model.n_nodes)]
     K = len(ec_batch)
     sample_size = K*cf.batch_size
     markers = ['*' for _ in range(sample_size)] + ['o' for _ in range(len(labels_test))]
-    fig1, axes = plt.subplots(K//2, 2, figsize = (2*5, 5*K//2))
+    nrows = 2 if horizontal else K//2
+    ncols = K//2 if horizontal else 2
+    fig1, axes = plt.subplots(nrows, ncols, figsize = (5*ncols, 5*nrows))
     for k in range(K):
         label = int(labels[k*cf.batch_size])
         with torch.no_grad():
@@ -232,8 +231,8 @@ def visualize_samples(model, cf, activities_test, labels_test, ec_batch, labels,
                 fixed_preds=cf.fixed_preds_test
             )
         
-        i = k//2
-        j = k%2
+        i = k%2 if horizontal else k//2
+        j = k//2 if horizontal else k%2
         axes[i, j].set_title(f'Class {label}')
         plot_samples(axes[i, j], model.preds[-1], size)
         
@@ -246,5 +245,5 @@ def visualize_samples(model, cf, activities_test, labels_test, ec_batch, labels,
 
     labels += labels_test
     
-    fig2 = plot_levels(activities, labels, markers)
+    fig2 = plot_levels(activities, labels, markers, horizontal=horizontal)
     return fig1, fig2

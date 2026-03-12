@@ -14,9 +14,16 @@ import numpy as np
     
 def main(cf):
 
-    model_name = f"{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}-act_fn={cf.act_fn}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}-n_ec={cf.n_ec}-act_fn={cf.act_fn}"
+    model_name = f"{cf.dataset}" 
+    if cf.n_classes is not None:
+        model_name += f"-n_classes={cf.n_classes}"
+    if cf.train_size is not None:
+        model_name += f"-train-size={cf.train_size}"
+    model_name += f"-n_vc={cf.n_vc}-n_ec={cf.n_ec}-act_fn={cf.act_fn}"
     if cf.positive:
         model_name += "-positive"
+    if cf.scheduler:
+        model_name += "-scheduler"
 
     os.environ["WANDB__SERVICE_WAIT"] = "300" # sometimes wandb takes more than 30s (the default time limit) to start
     wandb.login()
@@ -27,7 +34,13 @@ def main(cf):
     g = torch.Generator()
     g.manual_seed(cf.seed)
 
-    train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.test_size, cf.normalize, g)
+    train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(
+        cf.dataset, 
+        cf.train_size, 
+        cf.test_size, 
+        cf.n_classes, 
+        cf.normalize, 
+        g)
 
     train_loader = datasets.get_dataloader(train_dataset, cf.batch_size, utils.seed_worker, g)
     valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size, utils.seed_worker, g)
@@ -104,11 +117,12 @@ if __name__ == "__main__":
     )
     parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
     parser.add_argument("--train_size", type=int, default=None, help="Enter training set size")
+    parser.add_argument("--n_classes", type=int, default=None, help="Enter number of classes")
     parser.add_argument("--n_epochs", type=int, default=500, help="Enter number of epochs")
     parser.add_argument("--lr", type=float, default=1e-5, help="Enter learning rate")
     parser.add_argument("--n_vc", type=int, default=450, help="Enter size of VC layer")
     parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
-    parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='sigmoid', help="Enter activation function")
+    parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='tanh', help="Enter activation function")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--scheduler", action='store_true', help="Enable learning rate scheduler")
     parser.add_argument("--positive", action='store_true', help="Enable non-negative states")
@@ -129,6 +143,7 @@ if __name__ == "__main__":
     cf.test_size = None
     cf.normalize = True
     cf.batch_size = 64
+    cf.n_classes = args.n_classes
 
     # optim params
     cf.scheduler = args.scheduler

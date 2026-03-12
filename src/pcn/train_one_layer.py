@@ -16,7 +16,12 @@ def main(cf):
     g = torch.Generator()
     g.manual_seed(cf.seed)
 
-    model_name = f"{cf.dataset}-n_vc={cf.n_vc}-act_fn={cf.act_fn}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}-act_fn={cf.act_fn}"
+    model_name = f"{cf.dataset}" 
+    if cf.n_classes is not None:
+        model_name += f"-n_classes={cf.n_classes}"
+    if cf.train_size is not None:
+        model_name += f"-train-size={cf.train_size}"
+    model_name += f"-n_vc={cf.n_vc}-act_fn={cf.act_fn}"
     if cf.positive:
         model_name += "-positive"
         
@@ -98,11 +103,12 @@ if __name__ == "__main__":
     )
     parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
     parser.add_argument("--train_size", type=int, default=None, help="Enter training set size")
+    parser.add_argument("--n_classes", type=int, default=None, help="Enter number of classes")
     parser.add_argument("--n_vc", type=int, default=100, help="Enter size of hidden layer")
     parser.add_argument("--n_epochs", type=int, default=200, help="Enter number of epochs")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--scheduler", action='store_true', help="Enable learning rate scheduler")
-    parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='sigmoid', help="Enter activation function")
+    parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='tanh', help="Enter activation function")
     parser.add_argument("--positive", action='store_true', help="Enable non-negative states")
     parser.add_argument("--log", action='store_true', help="Enable activations and gradients logging")
     args = parser.parse_args()
@@ -113,7 +119,7 @@ if __name__ == "__main__":
     # experiment params
     cf.seed = args.seed
     cf.n_epochs = args.n_epochs
-    cf.log = True
+    cf.log = args.log
     cf.gamma = 0.99
 
     # dataset params
@@ -122,6 +128,7 @@ if __name__ == "__main__":
     cf.test_size = None
     cf.normalize = True
     cf.batch_size = 64
+    cf.n_classes = args.n_classes
 
     # optim params
     cf.scheduler = args.scheduler
