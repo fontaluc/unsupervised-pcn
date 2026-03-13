@@ -88,6 +88,7 @@ if __name__ == "__main__":
     cf.test_size = None
     cf.normalize = True
     cf.batch_size = 64
+    cf.n_classes = args.n_classes
 
     # inference params
     cf.mu_dt = 0.01
