@@ -16,14 +16,25 @@ def main(cf):
 
     device = 'cpu' if cf.force_cpu else utils.DEVICE
 
-    train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.test_size, cf.normalize, g)
+    train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(
+        cf.dataset, 
+        cf.train_size, 
+        cf.test_size,  
+        cf.normalize, 
+        g,
+        cf.n_classes)
     valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size, utils.seed_worker, g, device)
 
     nodes = [cf.n_vc, np.prod(size)]
     
-    model_name = f"{cf.dataset}-n_vc={cf.n_vc}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}"
+    model_name = f"{cf.dataset}" 
+    if cf.n_classes is not None:
+        model_name += f"-n_classes={cf.n_classes}"
+    if cf.train_size is not None:
+        model_name += f"-train-size={cf.train_size}"
+    model_name += f"-n_vc={cf.n_vc}"
     if cf.positive:
-        model_name += "-positive"    
+        model_name += "-positive"  
     
     model = PCModel(
         nodes=nodes, 
@@ -41,15 +52,15 @@ def main(cf):
     # Evaluate validation error
     valid_error = trainer.test(valid_loader, cf.n_max_iters, cf.fixed_preds_test)
     # Lock file to prevent overwriting when multiple processes run
-    with FileLock(f"eval_one_layer.csv.lock"):
+    with FileLock(f"eval-one-layer-n_classes={cf.n_classes}.csv.lock"):
         print('Lock acquired.')
-        data = [cf.dataset, cf.positive, cf.n_vc, valid_error]
-        if os.path.exists("outputs/eval_one_layer.csv"):
-            df = pd.read_csv("outputs/eval_one_layer.csv")
+        data = [cf.dataset, cf.n_vc, valid_error]
+        if os.path.exists(f"outputs/eval-one-layer-n_classes={cf.n_classes}.csv"):
+            df = pd.read_csv(f"outputs/eval-one-layer-n_classes={cf.n_classes}.csv")
             df.loc[len(df)] = data
         else:
-            df = pd.DataFrame([data], columns=['Dataset', 'Positive', 'VC size', 'Validation error'])
-        df.to_csv('outputs/eval_one_layer.csv', index=False)
+            df = pd.DataFrame([data], columns=['Dataset', 'VC size', 'Validation error'])
+        df.to_csv(f'outputs/eval-one-layer-n_classes={cf.n_classes}.csv', index=False)
 
 if __name__ == "__main__":
 
@@ -58,8 +69,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
     parser.add_argument("--n_vc", type=int, default=100, help="Enter size of hidden layer")
+    parser.add_argument("--n_classes", type=int, default=None, help="Enter number of classes")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
-    parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='sigmoid', help="Enter activation function")
     parser.add_argument("--positive", action='store_true', help="Enable non-negative states")
     parser.add_argument("--force_cpu", action='store_true', help="Use CPU even if GPU is available (to avoid CUDA out of memory)")
 
@@ -89,7 +100,6 @@ if __name__ == "__main__":
     # model params
     cf.use_bias = True
     cf.kaiming_init = False
-    cf.act_fn = args.act_fn
     cf.n_vc = args.n_vc
     cf.positive = args.positive
     cf.force_cpu = args.force_cpu

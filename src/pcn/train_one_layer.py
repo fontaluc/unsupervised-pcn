@@ -21,7 +21,7 @@ def main(cf):
         model_name += f"-n_classes={cf.n_classes}"
     if cf.train_size is not None:
         model_name += f"-train-size={cf.train_size}"
-    model_name += f"-n_vc={cf.n_vc}-act_fn={cf.act_fn}"
+    model_name += f"-n_vc={cf.n_vc}"
     if cf.positive:
         model_name += "-positive"
         
