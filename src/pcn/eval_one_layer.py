@@ -71,6 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_vc", type=int, default=100, help="Enter size of hidden layer")
     parser.add_argument("--n_classes", type=int, default=None, help="Enter number of classes")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
+    parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='tanh', help="Enter activation function")
     parser.add_argument("--positive", action='store_true', help="Enable non-negative states")
     parser.add_argument("--force_cpu", action='store_true', help="Use CPU even if GPU is available (to avoid CUDA out of memory)")
 
@@ -104,5 +105,6 @@ if __name__ == "__main__":
     cf.n_vc = args.n_vc
     cf.positive = args.positive
     cf.force_cpu = args.force_cpu
+    cf.act_fn = args.act_fn
 
     main(cf)
