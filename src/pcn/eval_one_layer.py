@@ -55,7 +55,10 @@ def main(cf):
     # Lock file to prevent overwriting when multiple processes run
     with FileLock(f"eval-one-layer-n_classes={cf.n_classes}.csv.lock"):
         print('Lock acquired.')
-        data = [cf.dataset, cf.n_vc, valid_error]
+        if cf.n_ec == 0:
+            data = [cf.dataset, cf.n_vc, valid_error]
+        else:
+            data = [cf.dataset, cf.n_ec, valid_error]
         if os.path.exists(f"outputs/eval-one-layer-n_classes={cf.n_classes}.csv"):
             df = pd.read_csv(f"outputs/eval-one-layer-n_classes={cf.n_classes}.csv")
             df.loc[len(df)] = data
