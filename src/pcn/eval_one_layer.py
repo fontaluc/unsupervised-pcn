@@ -24,17 +24,18 @@ def main(cf):
         g,
         cf.n_classes)
     valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size, utils.seed_worker, g, device)
-
-    nodes = [cf.n_vc, np.prod(size)]
     
     model_name = f"{cf.dataset}" 
     if cf.n_classes is not None:
         model_name += f"-n_classes={cf.n_classes}"
     if cf.train_size is not None:
         model_name += f"-train-size={cf.train_size}"
-    model_name += f"-n_vc={cf.n_vc}"
-    if cf.positive:
-        model_name += "-positive"  
+    model_name += f"-n_vc={cf.n_vc}" 
+
+    nodes = [cf.n_vc, np.prod(size)]
+    if cf.n_ec != 0:
+        model_name += f"-n_ec={cf.n_ec}"
+        nodes = [cf.n_ec] + nodes
     
     model = PCModel(
         nodes=nodes, 
@@ -65,15 +66,17 @@ def main(cf):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Script that trains a PCN with one hidden layer."
+        description="Script that evaluates the validation error of a PCN."
     )
     parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
-    parser.add_argument("--n_vc", type=int, default=100, help="Enter size of hidden layer")
+    parser.add_argument("--n_vc", type=int, default=100, help="Enter size of VC layer")
+    parser.add_argument("--n_ec", type=int, default=0, help="Enter size of EC layer")
     parser.add_argument("--n_classes", type=int, default=None, help="Enter number of classes")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='tanh', help="Enter activation function")
     parser.add_argument("--positive", action='store_true', help="Enable non-negative states")
     parser.add_argument("--force_cpu", action='store_true', help="Use CPU even if GPU is available (to avoid CUDA out of memory)")
+    parser.add_argument("--normalize", action='store_true', help="Normalize dataset")
 
     args = parser.parse_args()
 
@@ -87,7 +90,7 @@ if __name__ == "__main__":
     cf.dataset = args.dataset
     cf.train_size = None
     cf.test_size = None
-    cf.normalize = True
+    cf.normalize = args.normalize
     cf.batch_size = 64
     cf.n_classes = args.n_classes
 
@@ -103,6 +106,7 @@ if __name__ == "__main__":
     cf.use_bias = True
     cf.kaiming_init = False
     cf.n_vc = args.n_vc
+    cf.n_ec = args.n_ec
     cf.positive = args.positive
     cf.force_cpu = args.force_cpu
     cf.act_fn = args.act_fn
