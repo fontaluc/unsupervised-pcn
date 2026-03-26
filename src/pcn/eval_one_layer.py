@@ -52,19 +52,23 @@ def main(cf):
 
     # Evaluate validation error
     valid_error = trainer.test(valid_loader, cf.n_max_iters, cf.fixed_preds_test)
+    filename = "eval-one-layer"
+    if cf.n_classes is not None:
+        filename += f"-n_classes={cf.n_classes}"
+    filename += ".csv"
     # Lock file to prevent overwriting when multiple processes run
-    with FileLock(f"eval-one-layer-n_classes={cf.n_classes}.csv.lock"):
+    with FileLock(f"{filename}.lock"):
         print('Lock acquired.')
         if cf.n_ec == 0:
             data = [cf.dataset, cf.n_vc, valid_error]
         else:
             data = [cf.dataset, cf.n_ec, valid_error]
-        if os.path.exists(f"outputs/eval-one-layer-n_classes={cf.n_classes}.csv"):
-            df = pd.read_csv(f"outputs/eval-one-layer-n_classes={cf.n_classes}.csv")
+        if os.path.exists(f"outputs/{filename}"):
+            df = pd.read_csv(f"outputs/{filename}")
             df.loc[len(df)] = data
         else:
             df = pd.DataFrame([data], columns=['Dataset', 'VC size', 'Validation error'])
-        df.to_csv(f'outputs/eval-one-layer-n_classes={cf.n_classes}.csv', index=False)
+        df.to_csv(f'outputs/{filename}', index=False)
 
 if __name__ == "__main__":
 
