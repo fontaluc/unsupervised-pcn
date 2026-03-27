@@ -21,7 +21,7 @@ def main(cf):
     valid_loader = datasets.get_dataloader(valid_dataset, cf.batch_size, utils.seed_worker, g)
 
     if cf.dataset == 'mnist':
-        cf.n_vc = 450
+        cf.n_vc = 550
     elif cf.dataset == 'fmnist':
         cf.n_vc = 750
     else:
@@ -127,6 +127,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
     parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
+    parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='tanh', help="Enter activation function")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     args = parser.parse_args()
 
@@ -156,6 +157,6 @@ if __name__ == "__main__":
     cf.n_ec = args.n_ec
     cf.use_bias = True
     cf.kaiming_init = False
-    cf.act_fn = "tanh"
+    cf.act_fn = args.act_fn
 
     main(cf)
