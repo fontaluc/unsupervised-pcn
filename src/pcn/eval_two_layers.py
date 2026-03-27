@@ -7,6 +7,7 @@ import os
 from sklearn.linear_model import LogisticRegression
 import pandas as pd
 import numpy as np
+from filelock import FileLock
 
 def main(cf):
 
@@ -106,12 +107,16 @@ def main(cf):
     valid_acc = clf.score(X_valid, y_valid)
 
     data = [cf.dataset, cf.n_ec, replay_mse, recall_mse, valid_mse, valid_acc]
-    if os.path.exists("outputs/eval_two_layers.csv"):
-        df = pd.read_csv("outputs/eval_two_layers.csv")
-        df.loc[len(df)] = data
-    else:
-        df = pd.DataFrame([data], columns=['Dataset', 'EC size', 'Replay error', 'Completion error', 'Validation error', 'Validation accuracy'])
-    df.to_csv('outputs/eval_two_layers.csv', index=False)
+    filename = "eval_two_layers"
+    # Lock file to prevent overwriting when multiple processes run
+    with FileLock(f"{filename}.lock"):
+        print('Lock acquired.')
+        if os.path.exists(f"outputs/{filename}.csv"):
+            df = pd.read_csv(f"outputs/{filename}.csv")
+            df.loc[len(df)] = data
+        else:
+            df = pd.DataFrame([data], columns=['Dataset', 'EC size', 'Replay error', 'Completion error', 'Validation error', 'Validation accuracy'])
+        df.to_csv(f'outputs/{filename}.csv', index=False)
 
 if __name__ == "__main__":
     
