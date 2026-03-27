@@ -27,11 +27,13 @@ def main(cf):
     else:
         cf.n_vc = 2000
 
+    model_name = f"{cf.dataset}-n_vc={cf.n_vc}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}"
+
     nodes = [cf.n_vc, np.prod(size)]
     if cf.n_ec > 0:
         nodes = [cf.n_ec] + nodes
-        
-    model_name = f"{cf.dataset}-n_vc={cf.n_vc}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}"
+        model_name += f"-n_ec={cf.n_ec}"        
+    
     model = PCModel(
         nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
