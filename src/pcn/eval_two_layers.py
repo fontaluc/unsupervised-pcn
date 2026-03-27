@@ -13,7 +13,6 @@ def main(cf):
 
     utils.seed(cf.seed)
     g = torch.Generator()
-    g.manual_seed(cf.seed)
 
     train_dataset, valid_dataset, test_dataset, size = utils.get_datasets(cf.dataset, cf.train_size, cf.test_size, cf.normalize, g)
 
@@ -108,8 +107,8 @@ def main(cf):
     y_valid = labels_valid
     valid_acc = clf.score(X_valid, y_valid)
 
-    data = [cf.dataset, cf.n_ec, replay_mse, recall_mse, valid_mse, valid_acc]
-    filename = "eval_two_layers"
+    data = [cf.n_ec, replay_mse, recall_mse, valid_mse, valid_acc]
+    filename = f"eval_two_layers_{cf.dataset}"
     # Lock file to prevent overwriting when multiple processes run
     with FileLock(f"{filename}.lock"):
         print('Lock acquired.')
@@ -117,7 +116,7 @@ def main(cf):
             df = pd.read_csv(f"outputs/{filename}.csv")
             df.loc[len(df)] = data
         else:
-            df = pd.DataFrame([data], columns=['Dataset', 'EC size', 'Replay error', 'Completion error', 'Validation error', 'Validation accuracy'])
+            df = pd.DataFrame([data], columns=['EC size', 'Replay error', 'Completion error', 'Validation error', 'Validation accuracy'])
         df.to_csv(f'outputs/{filename}.csv', index=False)
 
 if __name__ == "__main__":
