@@ -154,6 +154,6 @@ if __name__ == "__main__":
     cf.n_ec = args.n_ec
     cf.use_bias = True
     cf.kaiming_init = False
-    cf.act_fn = utils.Tanh()
+    cf.act_fn = "tanh"
 
     main(cf)
