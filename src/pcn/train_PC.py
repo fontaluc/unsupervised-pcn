@@ -19,7 +19,7 @@ def main(cf):
         model_name += f"-n_classes={cf.n_classes}"
     if cf.train_size is not None:
         model_name += f"-train-size={cf.train_size}"
-    model_name += f"-n_vc={cf.n_vc}-n_ec={cf.n_ec}"
+    model_name += f"-n_vc={cf.n_vc}-n_ec={cf.n_ec}-seed={cf.seed}"
 
     os.environ["WANDB__SERVICE_WAIT"] = "300" # sometimes wandb takes more than 30s (the default time limit) to start
     wandb.login()
