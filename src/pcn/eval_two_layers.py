@@ -108,7 +108,7 @@ def main(cf):
     valid_acc = clf.score(X_valid, y_valid)
 
     data = [cf.n_ec, replay_mse, recall_mse, valid_mse, valid_acc]
-    filename = f"eval_two_layers_{cf.dataset}"
+    filename = f"eval_two_layers_{cf.dataset}-seed={cf.seed}"
     # Lock file to prevent overwriting when multiple processes run
     with FileLock(f"{filename}.lock"):
         print('Lock acquired.')
