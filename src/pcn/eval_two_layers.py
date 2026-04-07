@@ -26,8 +26,12 @@ def main(cf):
     else:
         cf.n_vc = 2000
 
-    model_name = f"{cf.dataset}-n_vc={cf.n_vc}" if cf.train_size == None else f"{cf.dataset}-train_size={cf.train_size}-n_vc={cf.n_vc}"
-
+    model_name = f"{cf.dataset}" 
+    if cf.n_classes is not None:
+        model_name += f"-n_classes={cf.n_classes}"
+    if cf.train_size is not None:
+        model_name += f"-train-size={cf.train_size}"
+    model_name += f"-n_vc={cf.n_vc}-n_ec={cf.n_ec}-seed={cf.seed}"
     nodes = [cf.n_vc, np.prod(size)]
     if cf.n_ec > 0:
         nodes = [cf.n_ec] + nodes
