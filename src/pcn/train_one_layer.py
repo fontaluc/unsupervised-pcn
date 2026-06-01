@@ -41,7 +41,7 @@ def main(cf):
 
     nodes = [cf.n_vc, np.prod(size)]
     model = PCModel(
-        nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init, positive=cf.positive
+        nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
     
     if cf.scheduler:
