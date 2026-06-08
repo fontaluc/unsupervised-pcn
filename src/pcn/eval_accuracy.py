@@ -37,7 +37,7 @@ def main(cf):
     model = PCModel(
         nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
-    model.load_state_dict(torch.load(f"models/{model_name}.pt", map_location=utils.DEVICE, weights_only=True))
+    model.load_state_dict(torch.load(f"models/pcn-{model_name}.pt", map_location=utils.DEVICE, weights_only=True))
 
     # Classification accuracy
     activities_train, labels_train = plotting.infer_latents(
