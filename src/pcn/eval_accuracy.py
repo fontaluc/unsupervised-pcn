@@ -27,43 +27,45 @@ def main(cf):
     else:
         cf.n_vc = 2000
 
+    model_name = f"{cf.dataset}-n_vc={cf.n_vc}"
     nodes = [cf.n_vc, np.prod(size)]
     if cf.n_ec > 0:
         nodes = [cf.n_ec] + nodes
-        
-    model_name = f"pcn-{cf.dataset}-n_vc={cf.n_vc}-n_ec={cf.n_ec}" if cf.n_ec > 0 else f"pcn-{cf.dataset}-n_vc={cf.n_vc}"
+        model_name += f"-n_ec={cf.n_ec}"
+    model_name += f"-seed={cf.seed}"
+
     model = PCModel(
         nodes=nodes, mu_dt=cf.mu_dt, act_fn=cf.act_fn, use_bias=cf.use_bias, kaiming_init=cf.kaiming_init
     )
     model.load_state_dict(torch.load(f"models/{model_name}.pt", map_location=utils.DEVICE, weights_only=True))
 
-    for l in range(model.n_layers):
-        # Classification accuracy
-        activities_train, labels_train = plotting.infer_latents(
-            model, train_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
-        )
-        X_train = activities_train[l]
-        y_train = labels_train
-        scaler = preprocessing.StandardScaler().fit(X_train)
-        X_train = scaler.transform(X_train)
-        clf = svm.LinearSVC(verbose=1, random_state=cf.seed).fit(X_train, y_train)
+    # Classification accuracy
+    activities_train, labels_train = plotting.infer_latents(
+        model, train_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
+    )
+    X_train = activities_train[cf.layer]
+    y_train = labels_train
+    scaler = preprocessing.StandardScaler().fit(X_train)
+    X_train = scaler.transform(X_train)
+    clf = svm.LinearSVC(verbose=1, random_state=cf.seed).fit(X_train, y_train)
 
-        activities_valid, labels_valid = plotting.infer_latents(
-            model, valid_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
-        )
-        X_valid = activities_valid[l]
-        y_valid = labels_valid
-        X_valid = scaler.transform(X_valid)
-        valid_acc = clf.score(X_valid, y_valid)
+    activities_valid, labels_valid = plotting.infer_latents(
+        model, valid_loader, cf.n_max_iters, cf.step_tolerance, cf.init_std, cf.fixed_preds_test
+    )
+    X_valid = activities_valid[cf.layer]
+    y_valid = labels_valid
+    X_valid = scaler.transform(X_valid)
+    valid_acc = clf.score(X_valid, y_valid)
 
-        # Lock file to prevent overwriting when multiple processes run
-        with FileLock("eval_two_layers.csv.lock"): 
-            print('Lock acquired.')
-            with open('outputs/eval_two_layers.csv') as f:
-                df = pd.read_csv(f)
-                idx = df.index[(df['Dataset'] == cf.dataset) & (df['EC size'] == cf.n_ec)]
-                df.loc[idx, [f'Validation accuracy {l}']] = valid_acc
-                df.to_csv('outputs/eval_two_layers.csv', index=False)
+    filename = f"eval_two_layers_{cf.dataset}-seed={cf.seed}.csv"
+    # Lock file to prevent overwriting when multiple processes run
+    with FileLock(f"{filename}.lock"): 
+        print('Lock acquired.')
+        with open(f'outputs/{filename}') as f:
+            df = pd.read_csv(f)
+            idx = df.index[df['EC size'] == cf.n_ec]
+            df.loc[idx, [f'Validation accuracy {cf.layer}']] = valid_acc
+            df.to_csv(f'outputs/{filename}', index=False)
 
 if __name__ == "__main__":
     
@@ -72,14 +74,13 @@ if __name__ == "__main__":
     )
     parser.add_argument("--dataset", choices=['mnist', 'fmnist', 'cifar10'], default='mnist', help="Enter dataset name")
     parser.add_argument("--n_ec", type=int, default=30, help="Enter size of EC layer")
+    parser.add_argument("--act_fn", choices=['sigmoid', 'tanh', 'relu', 'linear'], default='tanh', help="Enter activation function")
+    parser.add_argument("--layer", type=int, default=1, help="Enter layer to evaluate")
     parser.add_argument("--seed", type=int, default=0, help="Enter seed")
     args = parser.parse_args()
 
     # Hyperparameters dict
     cf = utils.AttrDict()
-
-    # experiment params
-    cf.seed = args.seed
 
     # dataset params
     cf.dataset = args.dataset
@@ -101,6 +102,8 @@ if __name__ == "__main__":
     cf.n_ec = args.n_ec
     cf.use_bias = True
     cf.kaiming_init = False
-    cf.act_fn = utils.Tanh()
+    cf.act_fn = args.act_fn
+    cf.seed = args.seed
+    cf.layer = args.layer
 
     main(cf)
