@@ -1,7 +1,7 @@
 #!/bin/sh
 ### General options
 ### –- specify queue --
-#SBATCH -C sirocco
+#SBATCH -C a100
 ### -- set the job Name --
 #SBATCH -J train_PC
 ### -- ask for number of cores (default: 1) --
@@ -9,7 +9,7 @@
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #SBATCH --exclusive
 ### -- set walltime limit: j-h:m:s
-#SBATCH --time 10:0:0
+#SBATCH --time 1-0:0:0
 ### -- Specify the output and error file. %J is the job-id --
 ### -- -o and -e mean append, -oo and -eo mean overwrite --
 #SBATCH -o /beegfs/lfontain/unsupervised-pcn/outputs/logs/train_PC_%J.out
@@ -23,4 +23,4 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/train_PC.py --n_epochs=400 --N=10097 --n_ec=3
+srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/train_PC.py --dataset="mnist" --n_ec=300 --n_vc=450 --n_classes=8

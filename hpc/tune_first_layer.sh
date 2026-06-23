@@ -3,7 +3,7 @@
 ### -- set the job Name --
 #SBATCH -J tune_first_layer
 ### -- set the job array --
-#SBATCH --array=1-24
+#SBATCH --array=1-2
 ### -- ask for number of cores (default: 1) --
 #SBATCH -n 1
 ### -- set walltime limit: j-h:m:s
@@ -14,6 +14,8 @@
 #SBATCH -e /beegfs/lfontain/unsupervised-pcn/outputs/logs/tune_first_layer_%A_%a.err
 # -- end of Slurm options --
 
+# Initialize environment modules (module command is not loaded by default in some nodes)
+source /etc/profile
 
 # Load modules
 module load build/conda/4.10
@@ -21,11 +23,7 @@ module load compiler/cuda/12.3
 
 conda activate torch_env
 
-datasets=(fmnist cifar10)
-# compute dataset index (tasks 1-12 -> 0, 13-24 -> 1)
-dataset_index=$(( (SLURM_ARRAY_TASK_ID - 1) / 12 ))
-dataset=${datasets[$dataset_index]}
-N_vc=(600 550 500 450 400 350 300 250 200 150 100 50)
-n_index=$(( (SLURM_ARRAY_TASK_ID - 1) % 12 ))
-n_vc=${N_vc[$n_index]}
-srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/eval_one_layer.py --dataset="$dataset" --n_vc=$n_vc
+N_vc=(800 700)
+n_vc=${N_vc[$((SLURM_ARRAY_TASK_ID - 1))]}
+
+srun python /beegfs/lfontain/unsupervised-pcn/src/pcn/eval_one_layer.py --dataset="mnist" --n_vc=$n_vc --normalize
